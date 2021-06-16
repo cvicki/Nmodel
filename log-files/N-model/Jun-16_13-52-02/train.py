@@ -188,7 +188,7 @@ def build_train_set(trajectories, gamma, scaler):
         P_a = diag_dot(distr_fir, value_for_each_action)
 
         # advantages = trajectory['rewards'] - values +gamma*P_a[:, np.newaxis]# gamma * np.append(values[1:], values[-1]), axis=0)  #
-        # trajectory['advantages'] = np.asarray(advantages)
+        trajectory['advantages'] = np.asarray(advantages)
 
 
     start_time = datetime.datetime.now()
@@ -196,7 +196,7 @@ def build_train_set(trajectories, gamma, scaler):
 
     # merge datapoints from all trajectories
     unscaled_obs = np.concatenate([t['unscaled_obs'][:-burn] for t in trajectories])
-    # disc_sum_rew = np.concatenate([t['disc_sum_rew'][:-burn] for t in trajectories])
+    disc_sum_rew = np.concatenate([t['disc_sum_rew'][:-burn] for t in trajectories])
 
     scale, offset = scaler.get()
     actions = np.concatenate([t['actions'][:-burn] for t in trajectories])
@@ -232,7 +232,7 @@ def build_train_set(trajectories, gamma, scaler):
     time_policy = end_time - start_time
     print('build_train_set time:', int((time_policy.total_seconds() / 60) * 100) / 100., 'minutes')
     # return observes,  actions, advantages, disc_sum_rew
-    return observes,  actions
+    return observes,  actions, disc_sum_rew
 
 
 def log_batch_stats(observes, actions, advantages, logger, episode):
@@ -321,7 +321,7 @@ def main(network, num_policy_iterations, no_of_actors, episode_duration, no_arri
         # update value function
         val_func.fit(observes, values, logger)
         # compute advantage function estimates
-        observes, actions = build_train_set(trajectories, gamma, scaler)
+        observes, actions, disc_sum_rew = build_train_set(trajectories, gamma, scaler)
         
         # add various stats
         log_batch_stats(observes, actions, advantages, logger, iteration)
