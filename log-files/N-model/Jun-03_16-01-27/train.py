@@ -16,7 +16,7 @@ from simulation import run_policy, run_weights
 
 def diag_dot(A, B):
     # returns np.diag(np.dot(A, B))
-    return np.einsum("ij,ji->i", A, B) #element by element multiplication, then sum each row?
+    return np.einsum("ij,ji->i", A, B)
 
 def add_disc_sum_rew(trajectories, policy, network, gamma, lam, scaler, iteration):
     """
@@ -34,8 +34,8 @@ def add_disc_sum_rew(trajectories, policy, network, gamma, lam, scaler, iteratio
         if iteration!=1:
 
             values = trajectory['values']
-            observes = trajectory['observes'] #normalized states
-            unscaled_obs = trajectory['unscaled_obs'] #original states 
+            observes = trajectory['observes']
+            unscaled_obs = trajectory['unscaled_obs']
 
 
             ###### compute expectation of the value function of the next state ###########
@@ -56,7 +56,7 @@ def add_disc_sum_rew(trajectories, policy, network, gamma, lam, scaler, iteratio
             tds_pi = trajectory['rewards'] - values + gamma*P_pi[:, np.newaxis]#gamma * np.append(values[1:], values[-1]), axis=0)#
 
             # value function computing for futher neural network training
-            disc_sum_rew = discount(x=tds_pi,   gamma= lam*gamma, v_last = tds_pi[-1]) #+ values #new advantage function now, uncomment for algo 1 value function.
+            disc_sum_rew = discount(x=tds_pi,   gamma= lam*gamma, v_last = tds_pi[-1]) + values
         else:
             disc_sum_rew = discount(x=trajectory['rewards'],   gamma= gamma, v_last = trajectory['rewards'][-1])
 
@@ -232,8 +232,8 @@ def main(network, num_policy_iterations, no_of_actors, episode_duration, no_arri
     :param: see ArgumentParser below
     """
 
-    obs_dim = network.buffers_num # 2
-    act_dim = network.action_size_per_buffer # number of possible actions for each station
+    obs_dim = network.buffers_num
+    act_dim = network.action_size_per_buffer
     now = datetime.datetime.utcnow().strftime("%b-%d_%H-%M-%S")  # create unique directories
     time_start= datetime.datetime.now()
     logger = Logger(logname=network.network_name, now=now, time_start=time_start)

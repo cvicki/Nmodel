@@ -13,7 +13,7 @@ class ProcessingNetwork:
         self.mu = np.asarray(mu)  # service rates
         self.uniform_rate = np.sum(alpha)+np.sum(mu)  # uniform rate for uniformization
         self.p_arriving = np.divide(self.alpha, self.uniform_rate)# normalized arrival rates
-        self.p_compl = np.divide(self.mu, self.uniform_rate) #normalized service rates
+        self.p_compl = np.divide(self.mu, self.uniform_rate)#normalized service rates
         self.cumsum_rates = np.unique(np.cumsum(np.concatenate([self.p_arriving, self.p_compl])))
 
         self.A = np.asarray(A)  # each row represents activity: -1 means job is departing, +1 means job is arriving
@@ -110,14 +110,14 @@ class ProcessingNetwork:
         """
 
         action_full = np.zeros(self.buffers_num)
-        for i in range(len(self.D)): #number of stations 
-            res_act = act_ind[i] 
+        for i in range(len(self.D)):
+            res_act = act_ind[i]
             k = -1
 
-            for act in range(len(self.D[0])): #check each class to see if being served by current station
-                if self.D[i][act] == 1: #current class served by current station
+            for act in range(len(self.D[0])):
+                if self.D[i][act] == 1:
                     k += 1
-                    if res_act == k: # found the one priority is given to for current station
+                    if res_act == k:
                         break
             action_full[act] = 1
 
@@ -134,21 +134,21 @@ class ProcessingNetwork:
         """
 
         w = np.random.random()
-        wi = 0 
-        while w > self.cumsum_rates[wi]: #randomly choose which state to go to 
+        wi = 0
+        while w > self.cumsum_rates[wi]:
             wi += 1
         if wi == 0:
-            state_next = state + np.asarray([1, 0]) #station 1 new arrival 
+            state_next = state + np.asarray([1, 0])
         elif wi == 1:
-            state_next = state + np.asarray([0, 1]) #station 2 new arrival
+            state_next = state + np.asarray([0, 1])
         elif wi == 2 and (state[0] > 0):
-            state_next = state - np.asarray([1, 0]) #station 1 departure 
+            state_next = state - np.asarray([1, 0])
         elif wi == 3 and ((action[0] == 1 or state[1] == 0) and state[0] > 1):
-            state_next = state - np.asarray([1, 0]) #station 1 departure
+            state_next = state - np.asarray([1, 0])
         elif wi == 4 and ((action[0] == 0 or state[0] < 2) and state[1] > 0):
-            state_next = state - np.asarray([0, 1]) #station 2 departure 
+            state_next = state - np.asarray([0, 1])
         else:
-            state_next = state #no change 
+            state_next = state
         return state_next
 
 
@@ -192,9 +192,9 @@ class ProcessingNetwork:
 
 
         adjoint_buffers = {} # Python dictionary: key is a buffer, value is a list of buffers associated to the same station
-        for i in range(0, s_D[0]): #each station
-            for j in range(0, s_D[1]): #each buffer for current station
-                if self.D[i][j] ==1: #able to serve the buffer 
+        for i in range(0, s_D[0]):
+            for j in range(0, s_D[1]):
+                if self.D[i][j] ==1:
                     d = copy.copy(self.D[i])  # TODO: np.copy?
                     d[j] = 0
                     adjoint_buffers[j] = copy.copy(d)

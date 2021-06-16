@@ -38,7 +38,7 @@ def run_policy(network, policy, scaler, logger, gamma, policy_iter_num, no_episo
 
     simulators = [remote_network.remote(policy.nn.obs_dim, policy.nn.act_dim, policy.nn.hid1_mult, policy.kl_targ,
                                         policy.epochs, policy.batch_size, policy.lr, policy.clipping_range)
-                  for _ in range(MAX_ACTORS)] #create <MAX_ACTORS> instances of Policy in parallel 
+                  for _ in range(MAX_ACTORS)]
 
     actors_per_run = no_episodes // MAX_ACTORS  # do not run more parallel processes than number of cores
     remainder = no_episodes - actors_per_run * MAX_ACTORS
@@ -68,7 +68,7 @@ def run_policy(network, policy, scaler, logger, gamma, policy_iter_num, no_episo
 
 
     for i in range(len(accum_res)):
-        trajectories.append(accum_res[i][0]) #run_episode returns trajectory, total_steps; accum_res[i][0] is trajectory
+        trajectories.append(accum_res[i][0])
         total_steps += accum_res[i][1]  # total time-steps
 
     #################################################

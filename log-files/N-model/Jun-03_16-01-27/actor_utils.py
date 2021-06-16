@@ -3,7 +3,6 @@ import tensorflow as tf
 
 from sklearn.utils import shuffle
 
-
 class PolicyNN(tf.keras.Model):
     def __init__(self, obs_dim, act_dim, hid1_mult):
         super().__init__()
@@ -47,29 +46,22 @@ class Policy(object):
     def sur_loss(self, probs, actions, adv, old_probs):
         """
         :param probs: current action probabilities
-        :param actions: generated actions
+        :param actions: geenrated actions
         :param adv: advantage function estimates
         :param old_probs: action probabilities before training
         :return: surrogate loss function
         """
         adv = tf.cast(adv, 'float32')
-        self.entropy = tf.reduce_mean(tf.math.negative(
-            tf.math.multiply(probs, tf.math.log(probs))))
+        self.entropy = tf.reduce_mean(tf.math.negative(tf.math.multiply(probs, tf.math.log(probs))))
 
-        act_probs = tf.reduce_sum(
-            probs * tf.one_hot(indices=actions.astype('int32').flatten(), depth=probs.shape[1]), axis=1)
-        act_probs_old = tf.reduce_sum(
-            old_probs * tf.one_hot(indices=actions.astype('int32').flatten(), depth=probs.shape[1]), axis=1)
+        act_probs = tf.reduce_sum(probs * tf.one_hot(indices=actions.astype('int32').flatten(), depth=probs.shape[1]), axis=1)
+        act_probs_old = tf.reduce_sum(old_probs * tf.one_hot(indices=actions.astype('int32').flatten(), depth=probs.shape[1]), axis=1)
 
-        ratios = tf.math.exp(tf.math.log(act_probs) -
-                             tf.math.log(act_probs_old))
-        clipped_ratios = tf.clip_by_value(
-            ratios, clip_value_min=1 - self.clipping_range, clip_value_max=1 + self.clipping_range)
-        loss_clip = tf.minimum(tf.multiply(adv, ratios),
-                               tf.multiply(adv, clipped_ratios))
+        ratios = tf.math.exp(tf.math.log(act_probs) - tf.math.log(act_probs_old))
+        clipped_ratios = tf.clip_by_value(ratios, clip_value_min=1 - self.clipping_range, clip_value_max=1 + self.clipping_range)
+        loss_clip = tf.minimum(tf.multiply(adv, ratios), tf.multiply(adv, clipped_ratios))
 
-        loss = tf.math.negative(tf.reduce_mean(
-            loss_clip))  # - self.entropy*0.0001
+        loss = tf.math.negative(tf.reduce_mean(loss_clip))#- self.entropy*0.0001
 
         return loss
 
@@ -87,41 +79,39 @@ class Policy(object):
         policy_loss = 0
         a_opt = tf.keras.optimizers.Adam(learning_rate=self.lr)
         for epoch in range(self.epochs):
-            states, actions, adv, old_probs = shuffle(
-                states, actions, adv, old_probs)
+            states, actions, adv, old_probs = shuffle(states, actions, adv, old_probs)
             policy_loss = 0
             for i in range(bat_per_epoch):
                 n = i * self.batch_size
                 batch_loss, kl = self.batch_step(states[n:n + self.batch_size], actions[n:n + self.batch_size],
-                                                 adv[n:n + self.batch_size], old_probs[n:n + self.batch_size], optimizer=a_opt)
+                                 adv[n:n + self.batch_size], old_probs[n:n + self.batch_size], optimizer=a_opt)
                 policy_loss += batch_loss.numpy()
 
                 if kl.numpy() > self.kl_targ * 3:  # early stopping if D_KL diverges badly
                     print('early stopping: D_KL diverges badly')
                     break
 
+
             print('Policy NN learning epoch #', epoch, ' Loss = ', policy_loss)
         probs = self.nn(states)
-        entropy = tf.reduce_mean(tf.math.negative(
-            tf.math.multiply(probs, tf.math.log(probs))))
-        kl = tf.reduce_mean(tf.math.multiply(
-            probs, tf.math.log(tf.math.divide(probs, old_probs))))
+        entropy = tf.reduce_mean(tf.math.negative(tf.math.multiply(probs, tf.math.log(probs))))
+        kl = tf.reduce_mean(tf.math.multiply(probs, tf.math.log(tf.math.divide(probs, old_probs))))
         act_probs = tf.reduce_sum(
-            probs * tf.one_hot(indices=actions.astype('int32').flatten(), depth=probs.shape[1]), axis=1)
+            probs * tf.one_hot(indices=actions.astype('int32').flatten(), depth=probs.shape[1]),axis=1)
         act_probs_old = tf.reduce_sum(
             old_probs * tf.one_hot(indices=actions.astype('int32').flatten(), depth=probs.shape[1]), axis=1)
 
-        ratios = tf.math.exp(tf.math.log(act_probs) -
-                             tf.math.log(act_probs_old))
+        ratios = tf.math.exp(tf.math.log(act_probs) - tf.math.log(act_probs_old))
+
 
         logger.log({'PolicyLoss': policy_loss,
-                    'Clipping': self.clipping_range,
-                    'Max ratio': np.max(ratios),
-                    'Min ratio': np.min(ratios),
-                    'Mean ratio': np.mean(ratios),
-                    'PolicyEntropy': entropy.numpy(),
-                    'KL': kl.numpy(),
-                    'lr': self.lr})
+                  'Clipping': self.clipping_range,
+                  'Max ratio': np.max(ratios),
+                  'Min ratio': np.min(ratios),
+                  'Mean ratio': np.mean(ratios),
+                  'PolicyEntropy': entropy.numpy(),
+                  'KL': kl.numpy(),
+                  'lr': self.lr})
 
     def batch_step(self, states, actions, adv, old_probs, optimizer):
         """
@@ -143,8 +133,7 @@ class Policy(object):
         grads = tape.gradient(loss, self.nn.trainable_variables)
         # Update model
         optimizer.apply_gradients(zip(grads, self.nn.trainable_variables))
-        kl = tf.reduce_mean(tf.math.multiply(
-            p, tf.math.log(tf.math.divide(p, old_probs))))
+        kl = tf.reduce_mean(tf.math.multiply(p, tf.math.log(tf.math.divide(p, old_probs))))
         return loss, kl
 
     def set_weights(self, weights):
@@ -153,13 +142,13 @@ class Policy(object):
     def get_weights(self):
         return self.nn.get_weights()
 
-    def sample(self, obs, stochastic=True):
+    def sample(self, obs, stochastic = True):
         """
         returns action probabilities for states in 'obs'
         :param obs: state
         :return: if stochastic=True returns pi(a|x), else returns distribution with prob=1 on argmax[ pi(a|x) ]
         """
-        obs = np.array(obs, dtype='float32')
+        obs = np.array(obs, dtype = 'float32')
         if obs.ndim == 1:
             obs = tf.expand_dims(obs, axis=0)
         pr = self.nn(obs).numpy()
@@ -186,13 +175,13 @@ class Policy(object):
         :return: collected data
         """
 
-        policy_buffer = {}  # save action disctribution of visited states
+        policy_buffer = {} # save action disctribution of visited states
 
-        total_steps = 0  # count steps
+        total_steps = 0 # count steps
 
         observes = np.zeros((time_steps, network.buffers_num))
         actions = np.zeros((time_steps, network.stations_num), 'int8')
-        actions_glob = np.zeros((time_steps,), 'int8')
+        actions_glob = np.zeros((time_steps,  ), 'int8')
         rewards = np.zeros((time_steps, 1))
         unscaled_obs = np.zeros((time_steps, network.buffers_num), 'int32')
         unscaled_last = np.zeros((time_steps, network.buffers_num), 'int32')
@@ -200,29 +189,26 @@ class Policy(object):
         scale, offset = scaler.get()
 
         ##### modify initial state according to the method of intial states generation######
-        if sum(initial_state[:-1]) > 300:
+        if sum(initial_state[:-1]) > 300 :
             initial_state = np.zeros(network.buffers_num+1, 'int8')
-        state = np.asarray(initial_state[:-1], 'int32')
+        state = np.asarray(initial_state[:-1],'int32')
         ###############################################################
 
         t = 0
-        # run until visit to the empty state (regenerative state)
-        while t < time_steps:
+        while t < time_steps: # run until visit to the empty state (regenerative state)
             unscaled_obs[t] = state
-            # center and scale observations
-            state_input = (state - offset[:-1]) * scale[:-1]
+            state_input = (state - offset[:-1]) * scale[:-1]  # center and scale observations
 
             ###### compute action distribution according to Policy Neural Network for state###
             if tuple(state) not in policy_buffer:
                 act_distr = self.sample(state_input)
                 policy_buffer[tuple(state)] = act_distr
-            # distribution for each station
-            distr = policy_buffer[tuple(state)][0]
+            distr = policy_buffer[tuple(state)][0] # distribution for each station
             distr = distr / np.sum(distr)
             ############################################
 
-            # sample action according to distribution 'distr'
-            act_ind = np.random.choice(len(distr), 1, p=distr)
+
+            act_ind = np.random.choice(len(distr), 1, p=distr) # sample action according to distribution 'distr'
             action_full = network.dict_absolute_to_binary_action[act_ind[0]]
             action_for_server = network.dict_absolute_to_per_server_action[act_ind[0]]
 
@@ -239,21 +225,28 @@ class Policy(object):
         total_steps += len(actions)
         # record simulation
         no_opt_actions = check_optimality(unscaled_obs, actions)
-        trajectory = {  # 'observes': observes,
-            'actions': actions,
-            'actions_glob': actions_glob,
-            'rewards': rewards,
-            'unscaled_obs': unscaled_obs,
-            'unscaled_last': unscaled_last,
-            'no_opt_actions': no_opt_actions
-        }
+        trajectory = {#'observes': observes,
+                      'actions': actions,
+                      'actions_glob': actions_glob,
+                      'rewards': rewards,
+                      'unscaled_obs': unscaled_obs,
+                      'unscaled_last': unscaled_last,
+                      'no_opt_actions': no_opt_actions
+                  }
+
+
 
         print('Network:', network.network_name + '.',
-              'Average cost:', -np.mean(trajectory['rewards']))
+               'Average cost:', -np.mean(trajectory['rewards']))
 
         return trajectory, total_steps
 
-    def policy_performance(self, network, scaler, time_steps, initial_state, id, batch_num=50, stochastic=True):
+
+
+
+
+
+    def policy_performance(self, network, scaler, time_steps, initial_state, id, batch_num = 50, stochastic=True):
         """
         policy evaluation
         :param network: queueing network
@@ -274,7 +267,7 @@ class Policy(object):
 
         if sum(initial_state[:-1]) > 300:
             initial_state = np.zeros(network.buffers_num+1, 'int8')
-        state = np.asarray(initial_state[:-1], 'int32')
+        state = np.asarray(initial_state[:-1],'int32')
 
         print(state)
 
@@ -287,15 +280,13 @@ class Policy(object):
                 k = -1
             k += 1
 
-            # center and scale observations
-            state_input = (state - offset[:-1]) * scale[:-1]
+            state_input = (state - offset[:-1]) * scale[:-1]  # center and scale observations
 
             ###### compute action distribution according to Policy Neural Network for state###
             if tuple(state) not in policy_buffer:
                 act_distr = self.sample(state_input)
                 policy_buffer[tuple(state)] = act_distr
-            # distribution for each station
-            distr = policy_buffer[tuple(state)][0]
+            distr = policy_buffer[tuple(state)][0] # distribution for each station
             distr = distr / np.sum(distr)
             ############################################
 
@@ -304,23 +295,23 @@ class Policy(object):
             action_full = network.dict_absolute_to_binary_action[act_ind[0]]
 
             average_performance_batch[batch] = \
-                1/(k+1) * (np.dot(network.holding_cost, state)) + \
-                k / (k+1) * average_performance_batch[batch]
+                1/(k+1) * (np.dot(network.holding_cost, state)) + k / (k+1) * average_performance_batch[batch]
 
             state = network.next_state_N1(state, action_full)
 
-            if np.sum(state) > 5000:
+            if np.sum(state)>5000:
                 average_performance_batch = 0
                 break
 
         average_performance = np.mean(average_performance_batch)
         ci = np.std(average_performance_batch)*1.96 / np.sqrt(batch_num)
 
-        print(id, ' average_' + str(average_performance)+'+-' + str(ci))
+
+        print(id, ' average_' + str(average_performance)+'+-' +str(ci))
         return average_performance, id, ci
 
 
-def check_optimality(unscaled_obs, actions, file_name='action09.npy'):
+def check_optimality(unscaled_obs, actions, file_name = 'action09.npy'):
     """
     :param trajectory: generate trajectory
     :param file_name: file with array that contains optimal actions
