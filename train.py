@@ -167,7 +167,7 @@ def build_train_set(trajectories, gamma, scaler):
     """
 
     for trajectory in trajectories:
-        values = trajectory['values']
+        # values = trajectory['values']
 
         unscaled_obs = trajectory['unscaled_obs']
 
@@ -320,8 +320,9 @@ def main(network, num_policy_iterations, no_of_actors, episode_duration, no_arri
         values = val_fun_2(trajectories, gamma, scaler)
         # update value function
         val_func.fit(observes, values, logger)
-        # compute advantage function estimates
-        observes, actions = build_train_set(trajectories, gamma, scaler)
+        # compute actions
+        burn = -1
+        actions = np.concatenate([t['actions'][:-burn] for t in trajectories])
         
         # add various stats
         log_batch_stats(observes, actions, advantages, logger, iteration)
