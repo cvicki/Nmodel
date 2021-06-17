@@ -100,10 +100,10 @@ def val_fun_2(trajectories, gamma, scaler):
     """
 
     for trajectory in trajectories:
-        value = discount(x=np.negative(trajectory['rewards']),   gamma= gamma, v_last = np.negative(trajectory['rewards'][-1]))
+        value = discount(x=trajectory['rewards'],   gamma= gamma, v_last = trajectory['rewards'][-1])
         trajectory['values'] = value
-   
-    burn = 1
+        burn = 1
+    
     values = np.concatenate([t['values'][:-burn] for t in trajectories])
     scale, offset = scaler.get()
     values = (values - offset[-1]) * scale[-1]
@@ -321,14 +321,8 @@ def main(network, num_policy_iterations, no_of_actors, episode_duration, no_arri
         values = val_fun_2(trajectories, gamma, scaler)
         # update value function
         val_func.fit(observes, values, logger)
-        # # compute actions
-        # observes, actions = build_train_set(trajectories, gamma, scaler)
-
-        burn = 1
-        # unscaled_obs = np.concatenate([t['unscaled_obs'][:-burn] for t in trajectories])
-        # scale, offset = scaler.get()
-        actions = np.concatenate([t['actions'][:-burn] for t in trajectories])
-        # observes = (unscaled_obs - offset[:-1]) * scale[:-1]
+        # compute actions
+        observes, actions = build_train_set(trajectories, gamma, scaler)
         
         # add various stats
         log_batch_stats(observes, actions, advantages, logger, iteration)

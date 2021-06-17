@@ -100,7 +100,7 @@ def val_fun_2(trajectories, gamma, scaler):
     """
 
     for trajectory in trajectories:
-        value = discount(x=np.negative(trajectory['rewards']),   gamma= gamma, v_last = np.negative(trajectory['rewards'][-1]))
+        value = discount(x=trajectory['rewards'],   gamma= gamma, v_last = trajectory['rewards'][-1])
         trajectory['values'] = value
    
     burn = 1
