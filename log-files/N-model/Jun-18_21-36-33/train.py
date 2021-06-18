@@ -79,13 +79,13 @@ def add_disc_sum_rew(trajectories, policy, network, gamma, lam, scaler, iteratio
 
     unscaled_obs = np.concatenate([t['unscaled_obs'][:-burn] for t in trajectories])
     advantages = np.concatenate([t['advantages'][:-burn] for t in trajectories])
-    # scale, offset = scaler.get()
+    scale, offset = scaler.get()
     # observes = (unscaled_obs - offset[:-1]) * scale[:-1]
     #advantages = (advantages - offset[-1]) * scale[-1] #unclear which one to use to normalize advantages
     advantages = advantages  / (advantages.std() + 1e-6) # normalize advantages
-    # if iteration == 1:
-    #     for t in trajectories:
-    #         t['observes'] = (t['unscaled_obs'] - offset[:-1]) * scale[:-1]
+    if iteration == 1:
+        for t in trajectories:
+            t['observes'] = (t['unscaled_obs'] - offset[:-1]) * scale[:-1]
 
     # return observes, advantages
     return advantages
@@ -109,10 +109,6 @@ def val_fun_2(trajectories, gamma, iteration, scaler):
 
     if iteration == 1:
         scaler.update(np.hstack((unscaled_obs, values))) # scaler updates just once
-        scale, offset = scaler.get()
-        for t in trajectories:
-            t['observes'] = (t['unscaled_obs'] - offset[:-1]) * scale[:-1]
-    
     scale, offset = scaler.get()
     values_norm = (values - offset[-1]) * scale[-1] 
     observes = (unscaled_obs - offset[:-1]) * scale[:-1]
