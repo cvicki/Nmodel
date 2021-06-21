@@ -33,7 +33,7 @@ def add_disc_sum_rew(trajectories, policy, network, gamma, lam, scaler, iteratio
 
         if iteration!=1:
 
-            values = trajectory['values_NN'] # from the NN 
+            values = trajectory['values'] # from the NN 
             observes = trajectory['observes'] #normalized states
             unscaled_obs = trajectory['unscaled_obs'] #original states 
 
@@ -145,7 +145,7 @@ def add_value(trajectories, val_func, scaler, possible_states):
     # get value NN values for generated states and all possible 'next' states
     for trajectory in trajectories:
         values = val_func.predict(trajectory['observes']) #use value NN predict val from value fun 
-        trajectory['values_NN'] = values / scale[-1] + offset[-1]
+        trajectory['values'] = values / scale[-1] + offset[-1]
 
         # approximate value function of the states where transitions are possible from generated states
         values_set = np.zeros(( len(possible_states)+1, len(trajectory['observes'])))

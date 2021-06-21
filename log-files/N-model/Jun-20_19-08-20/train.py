@@ -33,7 +33,7 @@ def add_disc_sum_rew(trajectories, policy, network, gamma, lam, scaler, iteratio
 
         if iteration!=1:
 
-            values = trajectory['values_NN'] # from the NN 
+            values = trajectory['values']
             observes = trajectory['observes'] #normalized states
             unscaled_obs = trajectory['unscaled_obs'] #original states 
 
@@ -77,7 +77,7 @@ def add_disc_sum_rew(trajectories, policy, network, gamma, lam, scaler, iteratio
 
     burn = 1 # cut the last 'burn' points of the generated trajectories
 
-    # unscaled_obs = np.concatenate([t['unscaled_obs'][:-burn] for t in trajectories])
+    unscaled_obs = np.concatenate([t['unscaled_obs'][:-burn] for t in trajectories])
     advantages = np.concatenate([t['advantages'][:-burn] for t in trajectories])
     # scale, offset = scaler.get()
     # observes = (unscaled_obs - offset[:-1]) * scale[:-1]
@@ -144,19 +144,19 @@ def add_value(trajectories, val_func, scaler, possible_states):
 
     # get value NN values for generated states and all possible 'next' states
     for trajectory in trajectories:
-        values = val_func.predict(trajectory['observes']) #use value NN predict val from value fun 
-        trajectory['values_NN'] = values / scale[-1] + offset[-1]
+        values = val_func.predict(trajectory['observes'])
+        trajectory['values'] = values / scale[-1] + offset[-1]
 
         # approximate value function of the states where transitions are possible from generated states
         values_set = np.zeros(( len(possible_states)+1, len(trajectory['observes'])))
 
-        new_obs = (trajectory['unscaled_last'] - offset[:-1]) * scale[:-1] #normalized prev state values 
-        values = val_func.predict(new_obs) #predict value from prev state 
-        values = values / scale[-1] + offset[-1] #unscaled
-        values_set[-1] = np.squeeze(values) #add to set when dont transition 
+        new_obs = (trajectory['unscaled_last'] - offset[:-1]) * scale[:-1]
+        values = val_func.predict(new_obs)
+        values = values / scale[-1] + offset[-1]
+        values_set[-1] = np.squeeze(values)
 
         for count, trans in enumerate(possible_states):
-            new_obs =(trajectory['unscaled_last'] + trans - offset[:-1]) * scale[:-1] #trans, how many people enter/leave buffer 
+            new_obs =(trajectory['unscaled_last'] + trans - offset[:-1]) * scale[:-1]
             values = val_func.predict(new_obs)
             values = values / scale[-1] + offset[-1]
             values_set[count] = np.squeeze(values)
@@ -301,6 +301,7 @@ def main(network, num_policy_iterations, no_of_actors, episode_duration, no_arri
             weights_set.append(policy.get_weights())
             scaler_set.append(copy.copy(scaler))
 
+      
         # simulate trajectories
         trajectories = run_policy(network, policy, scaler, logger, gamma, iteration,
                                       no_episodes=no_of_actors, time_steps=episode_duration)
@@ -323,13 +324,15 @@ def main(network, num_policy_iterations, no_of_actors, episode_duration, no_arri
         
         #compute value function estimates and update scaler 
         values_norm, observes = val_fun_2(trajectories, gamma, iteration, scaler)
-
-         # compute value NN for each visited state
-        add_value(trajectories, val_func, scaler, network.next_state_list())
-
+        
+        
         # compute advantage function estimates 
         advantages = add_disc_sum_rew(trajectories, policy, network, gamma, lam, scaler, iteration)
+
+        # compute value NN for each visited state
+        add_value(trajectories, val_func, scaler, network.next_state_list())
         
+        # add_value(trajectories, val_func, scaler, network.next_state_list())
         # update value function
         val_func.fit(observes, values_norm, logger)
 
