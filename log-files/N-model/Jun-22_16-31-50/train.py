@@ -150,9 +150,6 @@ def add_disc_sum_rew_2(trajectories, policy, network, gamma, lam, scaler, iterat
     advantages = np.concatenate([t['advantages'][:-burn] for t in trajectories])
     disc_sum_rew = np.concatenate([t['disc_sum_rew'][:-burn] for t in trajectories])
 
-    if iteration == 1:
-        scaler.update(np.hstack((unscaled_obs, disc_sum_rew))) # scaler updates just once
-        
     scale, offset = scaler.get()
     advantages = advantages  / (advantages.std() + 1e-6) # normalize advantages
     disc_sum_rew_norm = (disc_sum_rew - offset[-1]) * scale[-1]
