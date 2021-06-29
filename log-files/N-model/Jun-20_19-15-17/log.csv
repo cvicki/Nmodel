@@ -1,2 +1,0 @@
-_AverageReward,_No_optimal_actions,Steps,ValFuncLoss,_mean_act,_mean_adv,_min_adv,_max_adv,_std_adv,_Episode,_time_from_beginning_in_minutes,PolicyLoss,Clipping,Max ratio,Min ratio,Mean ratio,PolicyEntropy,KL,lr
-25.3734,50.0,40000,0.05803993832698297,0.49387469373468673,-0.875047946760632,-5.330779737819734,0.0,0.9999999990127076,1,0.18,16.57980650663376,0.196,1.1031632,0.88622516,0.9993729,0.34609202,0.00021790316,0.000245
