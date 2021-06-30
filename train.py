@@ -640,7 +640,7 @@ def main(network, num_policy_iterations, no_of_actors, episode_duration, no_arri
         # """
 
         ### algo 2.1: value as alg2 but lam*gamma and adv as algo 1 (training ~61-63)
-        # """
+        """
         # compute estimated of the value function
         values_norm= val_fun_2(trajectories, gamma, iteration, scaler, lam)
         # compute value NN for each visited state
@@ -658,15 +658,15 @@ def main(network, num_policy_iterations, no_of_actors, episode_duration, no_arri
         # """
 
         ### algo 2: with advantage as alg 1, value as alg 2 
-        """
+        # """
         # compute value NN for each visited state
         add_value(trajectories, val_func, scaler, network.next_state_list())
         #compute value function estimates and update scaler 
-        values_norm, observes = val_fun_2(trajectories, gamma, iteration, scaler)
+        observes, disc_sum_rew_norm = add_disc_sum_rew(trajectories, policy, network, gamma, lam, scaler, iteration, logger) 
         # compute advantage function estimates 
         advantages, actions = build_train_set2(trajectories, gamma, scaler) #use algo 1 advantage function 
         # update value function
-        val_func.fit(observes, values_norm, logger)# add various stats
+        val_func.fit(observes, disc_sum_rew_norm, logger)# add various stats
         
         log_batch_stats(observes, actions, advantages, logger, iteration)
         # update policy
