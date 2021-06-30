@@ -278,8 +278,8 @@ def val_fun_2(trajectories, gamma, iteration, scaler, lam):
 
 
     # lst_norm = get_vals(values_norm, unscaled_obs, state2_dict, 'v2n', logger)
-    observes = (unscaled_obs - offset[:-1]) * scale[:-1]
-    return values_norm, observes
+    # observes = (unscaled_obs - offset[:-1]) * scale[:-1]
+    return values_norm
     # return lst, lst_norm
 
 def discount(x, gamma, v_last):
@@ -699,10 +699,9 @@ def main(network, num_policy_iterations, no_of_actors, episode_duration, no_arri
         log_diff(lst1, lst2, logger, False, 'u_adv')
         log_diff(lst1_n, lst2_n, logger, True, 'n_adv')
         # compute value function estimates 
-        # disc_sum_rew_norm, observes = add_disc_sum_rew_2(trajectories, policy, network, gamma, lam, scaler, iteration) 
-        values_norm, observes= val_fun_2(trajectories, gamma, iteration, scaler, lam)
+        disc_sum_rew_norm, observes = add_disc_sum_rew_2(trajectories, policy, network, gamma, lam, scaler, iteration) 
         # update value function
-        val_func.fit(observes, values_norm, logger)
+        val_func.fit(observes, disc_sum_rew_norm, logger)
         # # compute actions
         burn = 1
         actions = np.concatenate([t['actions'][:-burn] for t in trajectories])

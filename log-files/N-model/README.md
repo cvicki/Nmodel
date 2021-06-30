@@ -41,3 +41,13 @@ Result: Much lower ValFuncLoss (9.190e-0.6), otherwise results comparable to d4.
 Description: Modify algo 2's adv function by adding prev policy iteration results (identical to algo 1's val fun estimate). Use algo 1's val fun. 
 
 Result: Results comparable to d5. ValFuncLoss is slightly larger (3.43e-05), otherwise similarly not training.
+
+###### d7:
+Description: Comparing algo 1 and algo 2's adv function. Policy updates according to algo 2's adv function however the advantage estimate is also calculated using algo 1's formula. The 10 most common states of the first trajectory are chosen and the average (unscaled) advantage for each of those 10 states are calculated for each policy iteration. In addition the average difference (find difference for each of the averaged states and take overall average)of all the ten states is found (u_advavg_diff). The average scaled advantage is also calculated (n_advavg_diff), each using its own respective scaling method. v1\[1,0\] refers to the average advantage estimate for state \[1,0\] using algo 1. 
+
+Result: Since the value function for algo 1 returns large negative values, the advantage function estimate using algo 2 is subsequently larger than the estimates from algo 1. Since the value function increases in magnitude thoughout the iterations, the difference between the average values increases. At the first iteration there is around a difference of 400, whereas in the final 50th iteration the difference is ~4500. Overall trained poorly, the %opt flucuated between 49 and 50. The average cost flucuated around as well between 20-30.
+
+###### d8:
+Description: Comparing algo 1 and algo 2's adv function. Done similarly to d7, except used algo 2's val function estimate since the values returned have a lower variance. 
+
+Result: The difference between the averages is smaller however there is an overall increase (more negative) in the differences between the algorithms. The differences were around 600 near the start of the training and around 875 at the end. In regards to %opt, near the beginning there was a sharp drop to 4 before increasing back to 50 and staying around there. Average cost was between 24-30 except for the seven iterations where %opt dropped then increased back to 50.  
