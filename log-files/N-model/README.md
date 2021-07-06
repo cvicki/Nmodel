@@ -53,4 +53,11 @@ Description: Comparing algo 1 and algo 2's adv function. Done similarly to d7, e
 Result: The difference between the averages is smaller however there is an overall increase (more negative) in the differences between the algorithms. The differences were around 600 near the start of the training and around 875 at the end. In regards to %opt, near the beginning there was a sharp drop to 4 before increasing back to 50 and staying around there. Average cost was between 24-30 except for the seven iterations where %opt dropped then increased back to 50.  
 
 ###### d9:
-Description: Comparing the advantage functions. Printing algo 2's advantage function estimates without summing future reward. 'adv2_1' represents eq 4.7's value when k = 1 and the remaining values are not summed. 'adv1_1' represents algo 1's adv function (4.5) estimate for k = 1. 'v1_[0 0]' refers to algo 1's unscaled estimate of the adv function for state [0 0] and 'v2_[0 0]' is algo 2's estimate. 
+Description: Comparing the advantage functions. Printing algo 2's advantage function estimates without summing future reward. 'adv2_1' represents eq 4.7's value when k = 1 and the remaining values are not summed. 'adv1_1' represents algo 1's adv function (4.5) estimate for k = 1.'adv_1_diff' = adv1_1 - adv2_1. Use algo 2's value function as zeta in algo 2's adv function estimate. 
+
+Result: The most significant difference is with the later advantage function estimates. The first few advantage values are quite similar. The averages calculated are the magnitude of the difference (absolute value of each of the differences)
+
+###### d10:
+Description: Same as d9 but with algo 1 value function. 
+
+Result: The same trend is seen as d9, except the differences are slightly larger. 
