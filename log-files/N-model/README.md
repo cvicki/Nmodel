@@ -61,3 +61,10 @@ Result: The most significant difference is with the later advantage function est
 Description: Same as d9 but with algo 1 value function. 
 
 Result: The same trend is seen as d9, except the differences are slightly larger. 
+
+###### d10_2, d10_3:
+Description: Same as d10, except reduced the number of iterations to 30 and printing out last 3 advantage function estimates (unsummed). 'adv_-2_diff' = 'adv1_-2' - 'adv2_-2' where -2 is the second to last item. 
+
+Result: The difference between estimates for the first iteration is higher (adv_first_diff:5.20) compared to d10 (2.69) and the last value average difference off is much lower compared to d10. Potentially an outlier with d10. 
+
+
