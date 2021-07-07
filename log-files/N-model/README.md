@@ -67,4 +67,11 @@ Description: Same as d10, except reduced the number of iterations to 30 and prin
 
 Result: The difference between estimates for the first iteration is higher (adv_first_diff:5.20) compared to d10 (2.69) and the last value average difference off is much lower compared to d10. Potentially an outlier with d10. 
 
+###### d11, d11_2, d11_3:
+Description: Further reduced the number of iterations to 20. In addition to those parameters in D10, included the full advantage estimate, d11_3 includes the percentage of the advantage estimate was captured by the first value in the summation. 
+
+Result: Overall small difference between algo 1 and algo 2 estimates except a few times and difference is quite significant. 
+
+##### d12:
+Description: Prints same parameters as d11, except use algo 1's val and adv estimates to update policy. Therefore the model should train and see how algo 2's estimate differs. 
 

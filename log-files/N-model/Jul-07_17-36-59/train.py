@@ -181,11 +181,11 @@ def advantage_fun(trajectories, policy, network, gamma, lam, scaler, iteration, 
     burn = 1 # cut the last 'burn' points of the generated trajectories
 
     unscaled_obs = np.concatenate([t['unscaled_obs'][:-burn] for t in trajectories])
-    # advantages = np.concatenate([t['advantages'][:-burn] for t in trajectories])
+    advantages = np.concatenate([t['advantages'][:-burn] for t in trajectories])
     # scale, offset = scaler.get()
     # observes = (unscaled_obs - offset[:-1]) * scale[:-1])
     #advantages = (advantages - offset[-1]) * scale[-1] #unclear which one to use to normalize advantages
-    # advantages = advantages  / (advantages.std() + 1e-6) # normalize advantages
+    advantages = advantages  / (advantages.std() + 1e-6) # normalize advantages
     # if iteration == 1:
     #     for t in trajectories:
     #         t['observes'] = (t['unscaled_obs'] - offset[:-1]) * scale[:-1]

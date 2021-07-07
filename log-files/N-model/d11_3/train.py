@@ -172,7 +172,7 @@ def advantage_fun(trajectories, policy, network, gamma, lam, scaler, iteration, 
             lst1.append(list(trajectory['rewards'][0])[0])
 
 
-        # trajectory['advantages'] = advantages
+        trajectory['advantages'] = advantages
 
     end_time = datetime.datetime.now()
     time_policy = end_time - start_time
@@ -181,17 +181,17 @@ def advantage_fun(trajectories, policy, network, gamma, lam, scaler, iteration, 
     burn = 1 # cut the last 'burn' points of the generated trajectories
 
     unscaled_obs = np.concatenate([t['unscaled_obs'][:-burn] for t in trajectories])
-    # advantages = np.concatenate([t['advantages'][:-burn] for t in trajectories])
+    advantages = np.concatenate([t['advantages'][:-burn] for t in trajectories])
     # scale, offset = scaler.get()
     # observes = (unscaled_obs - offset[:-1]) * scale[:-1])
     #advantages = (advantages - offset[-1]) * scale[-1] #unclear which one to use to normalize advantages
-    # advantages = advantages  / (advantages.std() + 1e-6) # normalize advantages
+    advantages = advantages  / (advantages.std() + 1e-6) # normalize advantages
     # if iteration == 1:
     #     for t in trajectories:
     #         t['observes'] = (t['unscaled_obs'] - offset[:-1]) * scale[:-1]
 
     # return observes, advantages
-    return lst1
+    return advantages, lst1
 
 def add_disc_sum_rew_2(trajectories, policy, network, gamma, lam, scaler, iteration):
     """
@@ -469,7 +469,7 @@ def build_train_set2(trajectories, gamma, scaler, state_dict, logger):
         lst.append(list(advantages[0])[0])
 
         
-        trajectory['advantages'] = np.asarray(advantages)
+        # trajectory['advantages'] = np.asarray(advantages)
 
 
     start_time = datetime.datetime.now()
@@ -514,7 +514,7 @@ def build_train_set2(trajectories, gamma, scaler, state_dict, logger):
     print('build_train_set time:', int((time_policy.total_seconds() / 60) * 100) / 100., 'minutes')
     # return observes,  actions, advantages, disc_sum_rew
     # return advantages, actions, lst 
-    return lst, advantages
+    return lst 
 
 
 
@@ -718,8 +718,8 @@ def main(network, num_policy_iterations, no_of_actors, episode_duration, no_arri
         # compute value NN for each visited state
         add_value(trajectories, val_func, scaler, network.next_state_list())
         # compute advantage function estimates 
-        lst1 = advantage_fun(trajectories, policy, network, gamma, lam, scaler, iteration, state1_dict, logger) # algo 2 
-        lst, advantages = build_train_set2(trajectories, gamma, scaler, state2_dict, logger) #use algo 1 advantage function 
+        advantages, lst1 = advantage_fun(trajectories, policy, network, gamma, lam, scaler, iteration, state1_dict, logger) # algo 2 
+        lst = build_train_set2(trajectories, gamma, scaler, state2_dict, logger) #use algo 1 advantage function 
 
         for i in range(len(lst1)):
             logger.log({'diff' + str(i) : lst[i] - lst1[i]})
@@ -779,7 +779,7 @@ if __name__ == "__main__":
                                                   'using Proximal Policy Optimizer'))
 
     parser.add_argument('-n', '--num_policy_iterations', type=int, help='Number of policy iterations to run',
-                        default=40) #default=50, use 5 for val fun comp.
+                        default=20) #default=50, use 5 for val fun comp.
     parser.add_argument('-b', '--no_of_actors', type=int, help='Number of episodes per training batch',
                         default=2)
     parser.add_argument('-t', '--episode_duration', type=int, help='Number of time-steps per an episode',
