@@ -79,7 +79,6 @@ def add_disc_sum_rew(trajectories, policy, network, gamma, lam, scaler, iteratio
         # lst = get_vals(disc_sum_rew, trajectory['unscaled_obs'], state1_dict, 'v1', logger)
     for i in range(1,4):
         logger.log({'val1_' + str(-i) : list(disc_sum_rew[-i])[0]})
-
     logger.log({'val1_first' : list(disc_sum_rew[0])[0]})
     
 
@@ -152,8 +151,7 @@ def advantage_fun(trajectories, policy, network, gamma, lam, scaler, iteration, 
             for i in range(1,4):
                 logger.log({'adv2_' + str(-i) : list(tds_pi[-i])[0],
                             'adv2_full_' + str(-i) : list(advantages[-i])[0],
-                            'adv%' + str(i): (list(tds_pi[-i])[0]/ list(advantages[-i])[0]) * 100,
-                            'val_NN' + str(-i) : list(values[-i])[0] })
+                            'adv%' + str(i): (list(tds_pi[-i])[0]/ list(advantages[-i])[0]) * 100 })
                 lst1.append(list(tds_pi[-i])[0])
 
             logger.log({'adv2_first' : list(tds_pi[0])[0]})
@@ -170,8 +168,7 @@ def advantage_fun(trajectories, policy, network, gamma, lam, scaler, iteration, 
             for i in range(1,4):
                 logger.log({'adv2_' + str(-i) : list(trajectory['rewards'][-i])[0],
                             'adv2_full_' + str(-i) : list(advantages[-i])[0],
-                            'adv%' + str(i): 100* (list(trajectory['rewards'][-i])[0] / list(advantages[-i])[0]),
-                            'val_NN' + str(-i) : 0 })
+                            'adv%' + str(i): 100* (list(trajectory['rewards'][-i])[0] / list(advantages[-i])[0])})
                 lst1.append(list(trajectory['rewards'][-i])[0])
 
 

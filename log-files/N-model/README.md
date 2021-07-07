@@ -72,6 +72,9 @@ Description: Further reduced the number of iterations to 20. In addition to thos
 
 Result: Overall small difference between algo 1 and algo 2 estimates except a few times and difference is quite significant. 
 
-##### d12:
+###### d12:
 Description: Prints same parameters as d11, except use algo 1's val and adv estimates to update policy. Therefore the model should train and see how algo 2's estimate differs. 
+
+###### d13: 
+Description: In addition to d12 parameters, also value function estimates and value NN outputs for the same states. 
 
