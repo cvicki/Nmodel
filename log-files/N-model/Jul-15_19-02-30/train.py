@@ -726,15 +726,15 @@ def main(network, num_policy_iterations, no_of_actors, episode_duration, no_arri
         # compute value NN for each visited state
         add_value(trajectories, val_func, scaler, network.next_state_list())
         #compute value function estimates and update scaler 
-        values_norm, observes = val_fun_2(trajectories,gamma,iteration, scaler, lam, logger) 
-        # observes, disc_sum_rew_norm = add_disc_sum_rew(trajectories, policy, network, gamma, lam, scaler, iteration) #algo 1
+        # values_norm, observes = val_fun_2(trajectories,gamma,iteration, scaler, lam, logger) 
+        observes, disc_sum_rew_norm = add_disc_sum_rew(trajectories, policy, network, gamma, lam, scaler, iteration) #algo 1
         # compute advantage function estimates 
         advantages = advantage_fun(trajectories, gamma, lam, scaler, iteration, state1_dict, val_func, logger) #new advantage function  
         # compute actions
         burn = 1
         actions = np.concatenate([t['actions'][:-burn] for t in trajectories])
         # update value function
-        val_func.fit(observes, values_norm, logger)# add various stats
+        val_func.fit(observes, disc_sum_rew_norm, logger)# add various stats
         
         log_batch_stats(observes, actions, advantages, logger, iteration)
         # update policy

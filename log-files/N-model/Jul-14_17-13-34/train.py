@@ -18,7 +18,7 @@ def diag_dot(A, B):
     # returns np.diag(np.dot(A, B))
     return np.einsum("ij,ji->i", A, B) #element by element multiplication, then sum each row?
 
-def get_vals(values, observes , state_dict, label):
+def get_vals(values, observes , state_dict, label, logger):
     #returns the average value estimates for each state in state dict 
     for i in range(len(observes)):
         state = str(observes[i])
@@ -27,7 +27,7 @@ def get_vals(values, observes , state_dict, label):
     lst = []
     for key in state_dict.keys():
         val = np.array(state_dict[key]).mean()
-        lst.append((key + label , val))
+        lst.append((key , val))
         # logger.log({label + key : val})
     # print(label, ': ', lst)
     return lst 
@@ -52,8 +52,7 @@ def log_vals(val, label, index, logger, tolist = False):
             lst.append(val[i])
     return lst 
 
-# def add_disc_sum_rew(trajectories, policy, network, gamma, lam, scaler, iteration, state1_dict, logger, states = None):
-def add_disc_sum_rew(trajectories, policy, network, gamma, lam, scaler, iteration):
+def add_disc_sum_rew(trajectories, policy, network, gamma, lam, scaler, iteration, state1_dict, logger, states = None):
     """
     compute value function for further training of Value Neural Network
     :param trajectory: simulated data
@@ -92,7 +91,7 @@ def add_disc_sum_rew(trajectories, policy, network, gamma, lam, scaler, iteratio
             tds_pi = trajectory['rewards'] - values + gamma*P_pi[:, np.newaxis]#gamma * np.append(values[1:], values[-1]), axis=0)#
 
             # value function computing for futher neural network training
-            disc_sum_rew = discount(x=tds_pi,   gamma= gamma * lam, v_last = tds_pi[-1]) + values
+            disc_sum_rew = discount(x=tds_pi,   gamma= gamma, v_last = tds_pi[-1]) + values
             # lst = get_vals(disc_sum_rew, trajectory['unscaled_obs'],state1_dict, 'val1_',  logger)
 
         else:
@@ -102,9 +101,9 @@ def add_disc_sum_rew(trajectories, policy, network, gamma, lam, scaler, iteratio
 
 
         trajectory['disc_sum_rew'] = disc_sum_rew
-        # lst = get_vals(disc_sum_rew, trajectory['unscaled_obs'], state1_dict, 'v1_', logger)
-    # for key, val in lst:
-    #     logger.log({'val1_' + key : val})
+        lst = get_vals(disc_sum_rew, trajectory['unscaled_obs'], state1_dict, 'v1_', logger)
+    for key, val in lst:
+        logger.log({'val1_' + key : val})
 
     # logger.log({'val1_first' : list(disc_sum_rew[0])[0]})
 
@@ -131,8 +130,8 @@ def add_disc_sum_rew(trajectories, policy, network, gamma, lam, scaler, iteratio
     return observes, disc_sum_rew_norm #, lst, lst1_norm 
     # return observes, disc_sum_rew_norm
 
-# def advantage_fun(trajectories, policy, network, gamma, lam, scaler, iteration, state_dict, logger, states= None):
-def advantage_fun(trajectories, gamma, lam, scaler, iteration, state_dict, val_func, logger):
+
+def advantage_fun(trajectories, policy, network, gamma, lam, scaler, iteration, state_dict, logger, states= None):
     """
     for algo 2, computes advantage function, very similar to value function of algo 1 
     compute value function for further training of Value Neural Network
@@ -144,51 +143,91 @@ def advantage_fun(trajectories, gamma, lam, scaler, iteration, state_dict, val_f
     :param scaler: normalization values
     """
     start_time = datetime.datetime.now()
+    # counter = 0
     for trajectory in trajectories:
+        # counter +=1 
 
         if iteration!=1:
 
-            values = trajectory['values_NN'] # from the NN
-            # observes = trajectory['observes'] #normalized states
-            # unscaled_obs = trajectory['unscaled_obs'] #original states 
+            values = trajectory['values_NN'] # from the NN 
+            observes = trajectory['observes'] #normalized states
+            unscaled_obs = trajectory['unscaled_obs'] #original states 
+            # print(len(values))
 
-            ###### compute value function of the next state ###########
-            obs_next = np.append(trajectory['observes'], [[0,0]], axis=0)
-            obs_next = np.delete(obs_next,0, axis = 0)
-            values_next = val_func.predict(obs_next) #use value NN predict val from value fun 
-            
-            scale, offset = scaler.get()
-            values_next = values_next / scale[-1] + offset[-1]
 
-            
-            summed_vals = trajectory['rewards'] - values + gamma * values_next 
+            ###### compute expectation of the value function of the next state ###########
+            probab_of_actions = policy.sample(observes) # probability of choosing actions according to a NN policy
+
+            action_array = network.next_state_probN(unscaled_obs) # transition probabilities for fixed actions
+
+            # expectation of the value function for fixed actions
+            value_for_each_action_list = []
+            for act in action_array:
+                value_for_each_action_list.append(diag_dot(act, trajectory['values_set'].T))
+            value_for_each_action = np.vstack(value_for_each_action_list)
+
+            P_pi = diag_dot(probab_of_actions, value_for_each_action)  # expectation of the value function
+            ##############################################################################################################
+
+            # td-error computing
+            tds_pi = trajectory['rewards'] - values + gamma*P_pi[:, np.newaxis]#gamma * np.append(values[1:], values[-1]), axis=0)#
+
+            # algo 1 value function computing for futher neural network training
+            # disc_sum_rew = discount(x=tds_pi,   gamma= lam*gamma, v_last = tds_pi[-1]) + values  #uncomment for algo 1 value function.
+           
             # algo 2 advantage function for futher neural network training
-            advantages = discount(x=summed_vals, gamma= lam*gamma, v_last = summed_vals[-1]) #+ values  #new advantage function
+            advantages = discount(x=tds_pi, gamma= lam*gamma, v_last = tds_pi[-1]) #+ values  #new advantage function
+            lst1 = get_vals(advantages, trajectory['unscaled_obs'], state_dict, 'adv2_full_', logger)
+            lst2 = get_vals(tds_pi, trajectory['unscaled_obs'], state_dict, 'adv2_', logger)
+            # for i in states:
+            #     lst1.append(list(advantages[i])[0])
+            #     logger.log({'adv2_' + str(i) : list(tds_pi[i])[0],
+            #                 'adv2_full_' + str(i) : list(advantages[i])[0],
+            #                 # 'adv%' + str(i): (list(tds_pi[i])[0]/ list(advantages[i])[0]),
+            #                 'state1_' + str(i) : trajectory['unscaled_obs'][i][0],
+            #                 'state2_' + str(i) : trajectory['unscaled_obs'][i][1]
+            #                 })
+
+            # log_vals(values, 'val_NN', states, logger, True)
 
         else:
+            tds_pi = trajectory['rewards']
             advantages = discount(x=trajectory['rewards'],   gamma= gamma * lam, v_last = trajectory['rewards'][-1])
+            lst1 = get_vals(advantages, trajectory['unscaled_obs'], state_dict, 'adv2_full_', logger)
+            lst2 = get_vals(tds_pi, trajectory['unscaled_obs'], state_dict, 'adv2_', logger)
+            
+            # for i in states:
+            #     # print(list(trajectory['unscaled_obs'][i]))
+            #     lst1.append(list(advantages[i])[0])
+            #     lst2.append(list(tds_pi[i][0]))
+            #     logger.log({'adv2_' + str(i) : list(trajectory['rewards'][i])[0],
+            #                 'adv2_full_' + str(i) : list(advantages[i])[0],
+            #                 # 'adv%' + str(i):(list(trajectory['rewards'][i])[0] / list(advantages[-i])[0]),
+            #                 'state1_'  +str(i) : trajectory['unscaled_obs'][i][0], 
+            #                 'state2_' + str(i) : trajectory['unscaled_obs'][i][1]
+            #                 })
+            # log_vals([0] * (max(states) +2), 'val_NN', states, logger)
 
-        trajectory['advantages'] = advantages
-    lst1 = get_vals(advantages, trajectory['unscaled_obs'], state_dict, 'adv2_')
-    
-    for key, val in lst1:
-        logger.log({key:val})
+        # trajectory['advantages'] = tds_pi
 
     end_time = datetime.datetime.now()
     time_policy = end_time - start_time
     print('add_disc_sum_rew time:', int((time_policy.total_seconds() / 60) * 100) / 100., 'minutes')
 
     burn = 1 # cut the last 'burn' points of the generated trajectories
-    advantages = np.concatenate([t['advantages'][:-burn] for t in trajectories])
-    # unscaled_obs = np.concatenate([t['unscaled_obs'][:-burn] for t in trajectories])
-    scale, offset = scaler.get()
+
+    unscaled_obs = np.concatenate([t['unscaled_obs'][:-burn] for t in trajectories])
+    # tds_pi = np.concatenate([t['advantages'][:-burn] for t in trajectories])
+    # scale, offset = scaler.get()
     # observes = (unscaled_obs - offset[:-1]) * scale[:-1])
-    advantages = advantages  / (advantages.std() + 1e-6) # normalize advantages
+    # advantages = advantages  / (advantages.std() + 1e-6) # normalize advantages
+    # tds_pi = tds_pi / (tds_pi.std() + 1e-6) # normalize advantages
     # if iteration == 1:
     #     for t in trajectories:
     #         t['observes'] = (t['unscaled_obs'] - offset[:-1]) * scale[:-1]
 
-    return advantages
+    # return observes, advantages
+    return  lst1, lst2
 
 def add_disc_sum_rew_2(trajectories, policy, network, gamma, lam, scaler, iteration):
     """
@@ -263,7 +302,7 @@ def add_disc_sum_rew_2(trajectories, policy, network, gamma, lam, scaler, iterat
 
 
 # def val_fun_2(trajectories, gamma, iteration, scaler, state2_dict, logger, lam):
-def val_fun_2(trajectories, gamma, iteration, scaler, lam, logger):
+def val_fun_2(trajectories, gamma, iteration, scaler, lam, logger, states= None):
     """
     estimates the value function for algo 2
     :param trajectories: simulated data
@@ -274,7 +313,7 @@ def val_fun_2(trajectories, gamma, iteration, scaler, lam, logger):
         # counter +=1
         value = discount(x=trajectory['rewards'],   gamma= gamma*lam, v_last = trajectory['rewards'][-1])
         trajectory['values'] = value
-        # log_vals(value, 'val2_', states, logger, True)
+        log_vals(value, 'val2_', states, logger, True)
         # lst = get_vals(value, trajectory['unscaled_obs'], state2_dict, 'v2', logger)
         # print(value.shape)
         
@@ -282,11 +321,11 @@ def val_fun_2(trajectories, gamma, iteration, scaler, lam, logger):
     burn = 1
     values = np.concatenate([t['values'][:-burn] for t in trajectories])
     unscaled_obs = np.concatenate([t['unscaled_obs'][:-burn] for t in trajectories])
-    if iteration == 1:
-        scaler.update(np.hstack((unscaled_obs, values))) # scaler updates just once
-        scale, offset = scaler.get()
-        for t in trajectories:
-            t['observes'] = (t['unscaled_obs'] - offset[:-1]) * scale[:-1]
+    # if iteration == 1:
+    #     scaler.update(np.hstack((unscaled_obs, values))) # scaler updates just once
+    #     scale, offset = scaler.get()
+    #     for t in trajectories:
+    #         t['observes'] = (t['unscaled_obs'] - offset[:-1]) * scale[:-1]
     
     scale, offset = scaler.get()
     values_norm = (values - offset[-1]) * scale[-1] 
@@ -574,9 +613,9 @@ def log_diff(lst1, lst2, logger, avg_only, label):
         k2,v2 = lst2[i]
         diff_unscaled[i] = v1 - v2 
         if not avg_only: 
-            logger.log({k1: v1,
-                        k2: v2})
-    logger.log({label+'avg_diff' : diff_unscaled.mean()})
+            logger.log({'v1_' + k1: v1,
+                        'v2_' + k2: v2})
+    logger.log({label + 'avg_diff' : diff_unscaled.mean()})
     return 
 
 # TODO: check shadow name
@@ -608,7 +647,7 @@ def main(network, num_policy_iterations, no_of_actors, episode_duration, no_arri
     weights_set = []
     scaler_set = []
     state1_dict = {} # for algo 1 val fun estimates
-    # state2_dict = {} # for algo 2 val fun estimates
+    state2_dict = {} # for algo 2 val fun estimates
     
     # states = random.sample(range(1, episode_duration), k = 5)
     # states.sort()
@@ -659,7 +698,7 @@ def main(network, num_policy_iterations, no_of_actors, episode_duration, no_arri
         # """
 
         ### algo 1 val, unsummed algo 2 adv fun 
-        """
+        # """
         # find 10 most visited states 
         if iteration == 1:
             state1_dict = most_common(trajectories, 10) # for algo 1 val fun estimates
@@ -680,7 +719,7 @@ def main(network, num_policy_iterations, no_of_actors, episode_duration, no_arri
         observes, disc_sum_rew_norm = add_disc_sum_rew(trajectories, policy, network, gamma, lam, scaler, iteration, state1_dict, logger) #algo 1
         # values_norm, observes = val_fun_2(trajectories, gamma, iteration, scaler, lam, logger, states)
         #compute differences 
-        log_diff(lst, lst1, logger, True, 'ad_diff_')
+        log_diff(lst, lst1, logger, False, 'ad_diff_')
         log_diff(lst, lst2, logger, False, 'ad_diff_full_')
         # update value function
         val_func.fit(observes, disc_sum_rew_norm, logger)
@@ -717,24 +756,16 @@ def main(network, num_policy_iterations, no_of_actors, episode_duration, no_arri
         logger.write(display=True)  # write logger results to file and stdout
         # """
 
-        ## algo 2: with new advantage function and algo 2 val with lam*gamma 
-        # """
-        #get most common states (for debugging )
-        if iteration == 1:
-            state1_dict = most_common(trajectories, 5) # for algo 1 val fun estimates
-
+        ## algo 2: with advantage as alg 1, value as alg 2 
+        """
         # compute value NN for each visited state
         add_value(trajectories, val_func, scaler, network.next_state_list())
         #compute value function estimates and update scaler 
-        values_norm, observes = val_fun_2(trajectories,gamma,iteration, scaler, lam, logger) 
-        # observes, disc_sum_rew_norm = add_disc_sum_rew(trajectories, policy, network, gamma, lam, scaler, iteration) #algo 1
+        observes, disc_sum_rew_norm = add_disc_sum_rew(trajectories, policy, network, gamma, lam, scaler, iteration, logger) 
         # compute advantage function estimates 
-        advantages = advantage_fun(trajectories, gamma, lam, scaler, iteration, state1_dict, val_func, logger) #new advantage function  
-        # compute actions
-        burn = 1
-        actions = np.concatenate([t['actions'][:-burn] for t in trajectories])
+        advantages, actions = build_train_set2(trajectories, gamma, scaler) #use algo 1 advantage function 
         # update value function
-        val_func.fit(observes, values_norm, logger)# add various stats
+        val_func.fit(observes, disc_sum_rew_norm, logger)# add various stats
         
         log_batch_stats(observes, actions, advantages, logger, iteration)
         # update policy

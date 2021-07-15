@@ -2,7 +2,7 @@
 
 ###### d1:
 Description: Simplifying algo 1. 
-Kept algo 1's formulas for estimating value and advantage functions. Modified code so that the Value NN was only updated once at the end(add_value called only once) compared to when called twice in original algorithm. Used algo 1's network parameters. (Following logs also used the same parameters)
+Kept algo 1's formulas for estimating value and advantage functions. Modified code so that the Value NN values were computed only once in the beginning and used for both advantage and value estimates and then updated at the end. The original computed the val NN values to estimate the value function, then updated the NN and recomputed new values to estimate the advantage. Used algo 1's network parameters. (Following logs also used the same parameters)
 
 Result: At around the 10-12 iteration, output showed signs of learning and improvement (judged by % of optimal actions increasing). Final iteration (50) had % of optimal actions at ~69. This is comparable to some runs of the original algorithm. 
 
@@ -78,3 +78,36 @@ Description: Prints same parameters as d11, except use algo 1's val and adv esti
 ###### d13: 
 Description: In addition to d12 parameters, also value function estimates and value NN outputs for the same states. 
 
+###### d14, d14_2:
+Description: Uses algo 1's value and advantage function to update policy and run code. Randomly chose 5 episodes from the second trajectory and output the estimates of the value and advantage functions for each policy update. d14 runs for 15 iterations, d14_2 runs for 30 iterations. Other parameters are the default parameters. 
+
+Parameters: 
+- Advantage parameters:
+  - algo 2:
+  - 'adv2_4911': unsummed advantage estimate using algo 2 for the 4911th episode of the second (last) trajectory. Unsummed meaning, only the first element of the summation (eq. 4.7) is returned. 
+  - 'adv2_full_4911': the advantage estimate using algo 2 (all the elements summed).  
+  - algo 1:
+  - 'adv1_4911': advantage function estimate using algo 1's eq. 
+  - misc:
+  - 'state1_4911': buffer 1's state at the 4911th episode
+  - 'state2_4911': buffer 2's state at the 4911th episode
+  - 'diff4911': 'adv1_4911' - 'adv2_full_4911'
+  - note: same naming scheme follows for the other 4 states. 
+- Value parameters: 
+  - 'val_NN4911': output of the value function neural net. The NN is updated using algo 1's val. function estimate. 
+  - 'val1_4911': estimate of value function using algo 1 of the 4911th epsiode of trajectory 2. 
+  - 'val2_4911': estimate of value function using algo 2.
+
+Results: 
+
+###### d15:
+Description: Value function with algo 1 and modified algo 2 advantage function. Using only the first unsummed value instead of entire summation. (will run later)
+
+###### d16:
+Description: State specific advantage function logging. Chose the 10 most common state and averaged the advantages at each state for the trajectory. Values are for the second trajectory. Used algo 1's value and advantage function to update policy.
+
+###### d17: 
+Description: Used new advantage function and algo 2's value function. New value (zeta(x^(t+1))) found using the next value of value_NN. 
+
+###### d18:
+Description: Used new advanatage function and algo 2's value function. New value (zeta(x^(t+1))) found by shifting trajectory['observes'] down one and repredicting the values using the val NN.  
