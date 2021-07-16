@@ -106,8 +106,10 @@ Description: Value function with algo 1 and modified algo 2 advantage function. 
 ###### d16:
 Description: State specific advantage function logging. Chose the 10 most common state and averaged the advantages at each state for the trajectory. Values are for the second trajectory. Used algo 1's value and advantage function to update policy.
 
-###### d17: 
-Description: Used new advantage function and algo 2's value function. New value (zeta(x^(t+1))) found using the next value of value_NN. 
+###### d17, d17_2: 
+Description: Used new advantage function and algo 2's value function. New value (zeta(x^(t+1))) found using the next value of value_NN. d17_2, is the same except prints out the advantage function of a few states. 
 
-###### d18:
-Description: Used new advanatage function and algo 2's value function. New value (zeta(x^(t+1))) found by shifting trajectory['observes'] down one and repredicting the values using the val NN.  
+###### d18, d18_2, d18_3:
+Description: Used new advanatage function and algo 2's value function. New value (zeta(x^(t+1))) found by shifting trajectory['observes'] down one and repredicting the values using the val NN. 
+d18_2, d18_3 used algo 1's value function. d18_2: 50 iterations instead of 30 with d18. d18_3 used algo 2 parameters for network (crashed at iteration 48)
+

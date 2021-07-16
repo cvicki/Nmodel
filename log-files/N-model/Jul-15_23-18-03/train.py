@@ -824,7 +824,7 @@ if __name__ == "__main__":
     parser.add_argument('-b', '--no_of_actors', type=int, help='Number of episodes per training batch',
                         default=2)
     parser.add_argument('-t', '--episode_duration', type=int, help='Number of time-steps per an episode',
-                        default=20*10**3) # default=20*10**3, algo 2: 50*10**3
+                        default=50*10**3) # default=20*10**3, algo 2: 50*10**3
     parser.add_argument('-x', '--no_arrivals', type=int, help='Number of arrivals to evaluate policies',
                         default=5*10**6)
 
@@ -845,9 +845,9 @@ if __name__ == "__main__":
     parser.add_argument('-p', '--ep_p', type=float, help='number of epochs for policy NN training',
                         default=3)
     parser.add_argument('-w', '--bs_p', type=float, help='minibatch size for policy NN training',
-                        default=2048) #default = 2048, algo 2: 4096
+                        default=4096) #default = 2048, algo 2: 4096
     parser.add_argument('-q', '--lr_p', type=float, help='learning rate for policy NN training',
-                        default=2.5 * 10 ** (-4)) # default=2.5 * 10 ** (-4), algo 2: 5 * 10 ** (-5)
+                        default=5 * 10 ** (-5)) # default=2.5 * 10 ** (-4), algo 2: 5 * 10 ** (-5)
 
     parser.add_argument('-k', '--kl_targ', type=float, help='D_KL target value',
                         default=0.003)
