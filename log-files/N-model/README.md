@@ -113,3 +113,11 @@ Description: Used new advantage function and algo 2's value function. New value 
 Description: Used new advanatage function and algo 2's value function. New value (zeta(x^(t+1))) found by shifting trajectory['observes'] down one and repredicting the values using the val NN. 
 d18_2, d18_3 used algo 1's value function. d18_2: 50 iterations instead of 30 with d18. d18_3 used algo 2 parameters for network (crashed at iteration 48)
 
+###### d19_10, d19_100, d_19_1000:
+Description: Used new advantage function (4.7) and summed a constant amount forward (N+L -> k+L, where L = 10,100, or 1000 ) and algo 1 val function (4.3). &zeta;(x<sup>(t+1)</sup>) was calculated by using the value function NN to predict the value of the next state of the trajectory. 
+
+Results: 
+Comparable Val NN loss across all three L values with L=1000 slightly higher (1.5e-05 vs 5.6e-5). The advantage function is still only negative across all three with the larger L values having larger negative values (with follows since there are more values to sum). The advantage function increases (becomes less negative) across the policy iterations however appears to slow down and perhaps decrease again at around the 50th iteration. None of the values appear to be training, L=1000 almost appears to be training in the opposite (favoring worse options) since the %opt appears to be decreasing in one run (d19_1000_1) but just fluctated around 50 the next time (d19_1000_2). In regards to policy update, there was a larger difference in min and max ratio with smaller L values (10,100) than L=1000 in the first ~10 iterations, ratios at the end were comparable.  
+
+Note: At each L = 10,100,1000 the code crashed from poor performance (avg cost >100 and low %optimal steps). 
+

@@ -153,13 +153,18 @@ def advantage_fun(trajectories, gamma, lam, scaler, iteration, state_dict, val_f
             # unscaled_obs = trajectory['unscaled_obs'] #original states 
 
             ###### compute value function of the next state ###########
-            obs_next = np.append(trajectory['observes'], [[0,0]], axis=0)
-            obs_next = np.delete(obs_next, 0, axis = 0)
+            extra = np.zeros((L,2))
+            print(extra)
+            obs_next = np.append(trajectory['observes'], extra, axis=0)
+            obs_next = np.delete(obs_next,0, axis = 0)
             values_next = val_func.predict(obs_next) #use value NN predict val from value fun 
+            
             scale, offset = scaler.get()
             values_next = values_next / scale[-1] + offset[-1]
+            
+            summed_vals = trajectory['rewards'] - values + gamma * values_next 
 
-            summed_vals = trajectory['rewards'] - values + gamma * values_next
+            # algo 2 advantage function for futher neural network training
             advantages = discount_2(x=summed_vals, gamma= lam*gamma, L = L ) #+ values  #new advantage function
 
 
@@ -167,10 +172,10 @@ def advantage_fun(trajectories, gamma, lam, scaler, iteration, state_dict, val_f
             advantages = discount_2(x=trajectory['rewards'],   gamma= gamma*lam, L= L)
 
         trajectory['advantages'] = advantages
-    lst1 = get_vals(advantages, trajectory['unscaled_obs'], state_dict, 'adv2_')
+    # lst1 = get_vals(advantages, trajectory['unscaled_obs'], state_dict, 'adv2_')
     
-    for key, val in lst1:
-        logger.log({key:val})
+    # for key, val in lst1:
+    #     logger.log({key:val})
 
     end_time = datetime.datetime.now()
     time_policy = end_time - start_time
@@ -180,7 +185,7 @@ def advantage_fun(trajectories, gamma, lam, scaler, iteration, state_dict, val_f
     advantages = np.concatenate([t['advantages'][:-burn] for t in trajectories])
     actions = np.concatenate([t['actions'][:-burn] for t in trajectories])
     # unscaled_obs = np.concatenate([t['unscaled_obs'][:-burn] for t in trajectories])
-    # scale, offset = scaler.get()
+    scale, offset = scaler.get()
     # observes = (unscaled_obs - offset[:-1]) * scale[:-1])
     advantages = advantages  / (advantages.std() + 1e-6) # normalize advantages
     # if iteration == 1:
@@ -313,26 +318,11 @@ def discount_2(x, gamma, L):
     Calculate discounted forward sum of a sequence at each point with set future interval (l) 
     :param x: the values to sum, burn the last L states. 
     """
-    # disc_array = np.zeros((len(x), 1))
-    # disc_array[-1] = x[-1]
-    # for i in range(2, L+1): #-2 to -L, second last to L last 
-    #     disc_array[-i] = x[-i] + gamma *disc_array[-i+1] 
-        
-    # for i in range(len(x) - L -2, -1, -1): #start at end of original values, iterate to beginning 
-    #     disc_array[i] = x[i] + (gamma * disc_array[i + 1]) - (gamma**(L+1))*x[i+L+1]
-    # return disc_array[:-L]
     disc_array = np.zeros((len(x), 1))
-    disc_array[-1] = x[-1]
-
-    for i in range(len(x) - 2, -1, -1): #start at end of original values, iterate to beginning 
-        if i < len(x)-L-2: #can sum full L values 
-            disc_array[i] = x[i] + (gamma * disc_array[i + 1]) - (gamma**(L+1))*x[i+L+1]
-        else: 
-            disc_array[i] = x[i] + (gamma * disc_array[i + 1])
-
+    disc_array[-L-1] = x[-L-1]
+    for i in range(len(x) - L - 2, -1, -1): #start at -l, iterate to beginning 
+        disc_array[i] = x[i] + (gamma * disc_array[i + 1]) - (gamma**(L+1))*x[i+L+1]
     return disc_array
-
-
 
 
 def add_value(trajectories, val_func, scaler, possible_states):
@@ -743,27 +733,36 @@ def main(network, num_policy_iterations, no_of_actors, episode_duration, no_arri
 
         ## algo 1: with new advantage function and algo 1 val function 
         # """
-        L = 10 #amount to sum
+        L = 1 #amount to sum
         #get most common states (for debugging )
         if iteration == 1:
             state1_dict = most_common(trajectories, 5) # for algo 1 val fun estimates
 
         # compute value NN for each visited state
         add_value(trajectories, val_func, scaler, network.next_state_list())
+        print('add val finished')
         #compute value function estimates and update scaler 
         observes, disc_sum_rew_norm = add_disc_sum_rew(trajectories, policy, network, gamma, lam, scaler, iteration, L) #algo 1
+        print('val fun finished')
         # update value function NN 
         val_func.fit(observes, disc_sum_rew_norm, logger)# add various stats
+        # print('update val fun finished')
         #recompute value NN for each visited state 
         add_value(trajectories, val_func, scaler, network.next_state_list())
+        # print('new val fun finished')
         # compute advantage function estimates  
         # observes,  actions, advantages = build_train_set(trajectories, gamma, scaler)
         advantages, actions = advantage_fun(trajectories, gamma, lam, scaler, iteration, state1_dict, val_func, logger, L) #new advantage function  
+        print(observes.shape, disc_sum_rew_norm.shape, np.squeeze(advantages).shape, actions.shape)
+        print('adv fun finished')
         log_batch_stats(observes, actions, advantages, logger, iteration)
+
         val_func.fit(observes, disc_sum_rew_norm, logger)# add various stats
+        print('update val fun finished')
 
         # update policy
         policy.update(observes, actions, np.squeeze(advantages), logger)
+        print('policy update done')
 
         logger.write(display=True)  # write logger results to file and stdout
         # """
@@ -842,7 +841,7 @@ if __name__ == "__main__":
                                                   'using Proximal Policy Optimizer'))
 
     parser.add_argument('-n', '--num_policy_iterations', type=int, help='Number of policy iterations to run',
-                        default=80) #default=50, use 5 for val fun comp.
+                        default=30) #default=50, use 5 for val fun comp.
     parser.add_argument('-b', '--no_of_actors', type=int, help='Number of episodes per training batch',
                         default=2)
     parser.add_argument('-t', '--episode_duration', type=int, help='Number of time-steps per an episode',

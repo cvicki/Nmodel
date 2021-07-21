@@ -743,7 +743,7 @@ def main(network, num_policy_iterations, no_of_actors, episode_duration, no_arri
 
         ## algo 1: with new advantage function and algo 1 val function 
         # """
-        L = 10 #amount to sum
+        L = 1000 #amount to sum
         #get most common states (for debugging )
         if iteration == 1:
             state1_dict = most_common(trajectories, 5) # for algo 1 val fun estimates
@@ -842,7 +842,7 @@ if __name__ == "__main__":
                                                   'using Proximal Policy Optimizer'))
 
     parser.add_argument('-n', '--num_policy_iterations', type=int, help='Number of policy iterations to run',
-                        default=80) #default=50, use 5 for val fun comp.
+                        default=50) #default=50, use 5 for val fun comp.
     parser.add_argument('-b', '--no_of_actors', type=int, help='Number of episodes per training batch',
                         default=2)
     parser.add_argument('-t', '--episode_duration', type=int, help='Number of time-steps per an episode',
