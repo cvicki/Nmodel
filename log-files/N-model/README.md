@@ -127,10 +127,13 @@ Description: Used new advantage function (4.7) and L=10. Logs the first instance
 Results: 
 In d20_10_2, two of the states chosen were skewed in the number of people per buffer ([12,1] and [11,3]) and overall the policy favored choosing action 1 and would be reflected by a larger advantage function estimate. However there would be instances were choosing action 0 also resulted in a very large estimate. In regards to more similar states (ex [2,2]) the advantage estimates were a lot more varied and tended to change largely across policy iterations even when the same action was taken. Overall the %opt did not train. d20_10 had 25 policy updates, d20_10_2 had 50.
 
-###### d21_10, d21_100:
+###### d21_10, d21_100, d21_algo1:
 Description: Same parameters as d20 but with additional log file: 'd21_10_adv_estimates'. Logs the advantage estimates and action taken (0 or 1) for everytime the second(final) trajectory visits the chosen state ([2,2]). 
-Each column represents a trajectory and the number of rows corresponds to the number of times [2,2] was visited. Each column was set to a length of 500 since it appeared that the majority of trajectories did not visit [2,2] more than 500 times and most only ~300. d21_10 has L=10 whereas d21_100 has L=100. 
+Each column represents a trajectory and the number of rows corresponds to the number of times [2,2] was visited. Each column was set to a length of 500 since it appeared that the majority of trajectories did not visit [2,2] more than 500 times and most only ~300. d21_10 has L=10 whereas d21_100 has L=100.
+d21_algo1 logs the same values except uses algo 1's adv fun. 
 
 Result: %opt did not improve. The advantage function would change between actions (decrease or increase) but would also change rapidly while the same action was taken. The sign and magnitude would also flucuate a lot. 
+
+
 
 

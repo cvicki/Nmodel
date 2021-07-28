@@ -823,7 +823,7 @@ def main(network, num_policy_iterations, no_of_actors, episode_duration, no_arri
 
         ## algo 1: with new advantage function and algo 1 val function 
         # """
-        L = 2 #rollback amount
+        L = 1 #rollback amount
 
         # compute value NN for each visited state
         add_value(trajectories, val_func, scaler, network.next_state_list())

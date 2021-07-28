@@ -159,8 +159,6 @@ def adv_logger(adv, trajectory, adv_log, iteration, act_adv, state = np.array([2
     action_list[counter] = ' algo2 action:'
     adv_list[counter] = ' algo2 adv:'
     counter +=1
-    mod = 0
-
 
     for i in range(0, len(observes)):
         if counter >= length:
@@ -168,11 +166,9 @@ def adv_logger(adv, trajectory, adv_log, iteration, act_adv, state = np.array([2
         curr_state = observes[i]
         # if curr_state == state:
         if np.array_equal(curr_state, state):
-            if np.array_equal(curr_state, state) and mod % 3 ==0:
-                adv_list[counter] = str(adv[i][0])
-                action_list[counter] = str(trajectory['actions'][i][0])
-                counter +=1 
-            mod +=1
+            adv_list[counter] = str(adv[i][0])
+            action_list[counter] = str(trajectory['actions'][i][0])
+            counter +=1 
     act_adv = np.vstack((action_list, adv_list)).T
     # print(act_adv.shape)
     adv_log = np.append(adv_log, act_adv, axis = 1)
@@ -714,7 +710,7 @@ def main(network, num_policy_iterations, no_of_actors, episode_duration, no_arri
     # states.sort()
     # print(states)
 
-    num = 200
+    num = 500
     adv_log = np.zeros((num + 1,1))
 
     while iteration < num_policy_iterations:
@@ -823,7 +819,7 @@ def main(network, num_policy_iterations, no_of_actors, episode_duration, no_arri
 
         ## algo 1: with new advantage function and algo 1 val function 
         # """
-        L = 2 #rollback amount
+        L = 1 #rollback amount
 
         # compute value NN for each visited state
         add_value(trajectories, val_func, scaler, network.next_state_list())
@@ -928,7 +924,7 @@ if __name__ == "__main__":
     parser.add_argument('-b', '--no_of_actors', type=int, help='Number of episodes per training batch',
                         default=2)
     parser.add_argument('-t', '--episode_duration', type=int, help='Number of time-steps per an episode',
-                        default=50*10**3) # default=20*10**3, algo 2: 50*10**3
+                        default=20*10**3) # default=20*10**3, algo 2: 50*10**3
     parser.add_argument('-x', '--no_arrivals', type=int, help='Number of arrivals to evaluate policies',
                         default=5*10**6)
 
@@ -949,7 +945,7 @@ if __name__ == "__main__":
     parser.add_argument('-p', '--ep_p', type=float, help='number of epochs for policy NN training',
                         default=3)
     parser.add_argument('-w', '--bs_p', type=float, help='minibatch size for policy NN training',
-                        default=2048) #default = 2048, algo 2: 4096
+                        default=4096) #default = 2048, algo 2: 4096
     parser.add_argument('-q', '--lr_p', type=float, help='learning rate for policy NN training',
                         default=2.5 * 10 ** (-4)) # default=2.5 * 10 ** (-4), algo 2: 5 * 10 ** (-5)
 

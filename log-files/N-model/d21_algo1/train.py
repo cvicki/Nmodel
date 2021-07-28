@@ -66,7 +66,7 @@ def add_disc_sum_rew(trajectories, policy, network, gamma, lam, scaler, iteratio
     # counter = 0
     start_time = datetime.datetime.now()
     for trajectory in trajectories:
-
+        # counter += 1
         if iteration!=1:
 
             values = trajectory['values_NN']
@@ -99,6 +99,8 @@ def add_disc_sum_rew(trajectories, policy, network, gamma, lam, scaler, iteratio
             disc_sum_rew = discount(x=trajectory['rewards'],   gamma= gamma, v_last = trajectory['rewards'][-1])
             # lst = get_vals(disc_sum_rew, trajectory['unscaled_obs'],state1_dict, 'val1_',  logger)
 
+
+
         trajectory['disc_sum_rew'] = disc_sum_rew
         # lst = get_vals(disc_sum_rew, trajectory['unscaled_obs'], state1_dict, 'v1_', logger)
     # for key, val in lst:
@@ -130,7 +132,7 @@ def add_disc_sum_rew(trajectories, policy, network, gamma, lam, scaler, iteratio
     # return observes, disc_sum_rew_norm
 
 
-def adv_logger(adv, trajectory, adv_log, iteration, act_adv, state = np.array([2,2])):
+def adv_logger(adv, trajectory, adv_log, iteration, state = np.array([2,2])):
     """
     Advantage function logger.
     :param adv: np array of calculated advantage function estimates
@@ -147,32 +149,17 @@ def adv_logger(adv, trajectory, adv_log, iteration, act_adv, state = np.array([2
     counter = 1
     adv_list = ['None']* length
     action_list = ['None']* length
-
-    action_list[0] = str(iteration) +' algo1 action:'
-    adv_list[0] = str(iteration) +' algo1 adv:'
-
-    for ac, ad in act_adv:
-        action_list[counter] = str(ac)
-        adv_list[counter] = str(ad)
-        counter +=1 
-
-    action_list[counter] = ' algo2 action:'
-    adv_list[counter] = ' algo2 adv:'
-    counter +=1
-    mod = 0
-
-
+    adv_list[0] = str(iteration)
+    action_list[0] = str(iteration)
     for i in range(0, len(observes)):
         if counter >= length:
             break
         curr_state = observes[i]
         # if curr_state == state:
         if np.array_equal(curr_state, state):
-            if np.array_equal(curr_state, state) and mod % 3 ==0:
-                adv_list[counter] = str(adv[i][0])
-                action_list[counter] = str(trajectory['actions'][i][0])
-                counter +=1 
-            mod +=1
+            adv_list[counter] = str(adv[i][0])
+            action_list[counter] = str(trajectory['actions'][i][0])
+            counter +=1 
     act_adv = np.vstack((action_list, adv_list)).T
     # print(act_adv.shape)
     adv_log = np.append(adv_log, act_adv, axis = 1)
@@ -180,7 +167,7 @@ def adv_logger(adv, trajectory, adv_log, iteration, act_adv, state = np.array([2
     return adv_log
 
 # def advantage_fun(trajectories, policy, network, gamma, lam, scaler, iteration, state_dict, logger, states= None):
-def advantage_fun(trajectories, gamma, lam, scaler, iteration, adv_log, val_func, logger, L, act_adv1):
+def advantage_fun(trajectories, gamma, lam, scaler, iteration, adv_log, val_func, logger, L):
     """
     for algo 2, computes advantage function, very similar to value function of algo 1 
     compute value function for further training of Value Neural Network
@@ -219,7 +206,7 @@ def advantage_fun(trajectories, gamma, lam, scaler, iteration, adv_log, val_func
     
     # for key, val in lst1:
     #     logger.log({key:val})
-    adv_log = adv_logger(advantages, trajectory, adv_log, iteration, act_adv1) 
+    adv_log = adv_logger(advantages, trajectory, adv_log, iteration) 
 
     end_time = datetime.datetime.now()
     time_policy = end_time - start_time
@@ -423,7 +410,7 @@ def add_value(trajectories, val_func, scaler, possible_states):
     time_policy = end_time - start_time
     print('add_value time:', int((time_policy.total_seconds() / 60) * 100) / 100., 'minutes')
 
-def build_train_set(trajectories, gamma, scaler, adv_log, L):
+def build_train_set(trajectories, gamma, scaler, adv_log, logger, L, iteration):
     """
     # data pre-processing for training, computation of advantage function estimates
     :param trajectory_whole:  simulated data
@@ -455,21 +442,8 @@ def build_train_set(trajectories, gamma, scaler, adv_log, L):
         advantages = trajectory['rewards'] - values +gamma*P_a[:, np.newaxis]# gamma * np.append(values[1:], values[-1]), axis=0)  #
         trajectory['advantages'] = np.asarray(advantages)
 
-    action_taken = []
-    act_adv = []
-    for i in range(len(advantages)):
-        if len(act_adv) == 2:
-            break
-        act = trajectory['actions'][i][0]
-        if act not in action_taken:
-            action_taken.append(act)
-            adv = trajectory['advantages'][i][0]
-            act_adv.append((act, adv))
-    sorted(act_adv, key=lambda x:x[0])
-    # print('act_adv: ', act_adv) 
-
     # adv_logger(advantages, trajectory, state_dict, logger) 
-    # adv_log = adv_logger(advantages, trajectory, adv_log, iteration)
+    adv_log = adv_logger(advantages, trajectory, adv_log, iteration) 
 
     start_time = datetime.datetime.now()
     burn = L
@@ -512,7 +486,7 @@ def build_train_set(trajectories, gamma, scaler, adv_log, L):
     time_policy = end_time - start_time
     print('build_train_set time:', int((time_policy.total_seconds() / 60) * 100) / 100., 'minutes')
     # return observes,  actions, advantages, disc_sum_rew
-    return act_adv
+    return actions, advantages, adv_log
     # return actions, advantages
 
 
@@ -562,6 +536,7 @@ def build_train_set2(trajectories, gamma, scaler, state_dict, logger, states = N
         
         trajectory['advantages'] = np.asarray(advantages)
 
+
     start_time = datetime.datetime.now()
     burn = 1
 
@@ -602,8 +577,9 @@ def build_train_set2(trajectories, gamma, scaler, state_dict, logger, states = N
     end_time = datetime.datetime.now()
     time_policy = end_time - start_time
     print('build_train_set time:', int((time_policy.total_seconds() / 60) * 100) / 100., 'minutes')
+    # return observes,  actions, advantages, disc_sum_rew
+    # return advantages, actions, lst 
     return advantages, lst
-    
 
 
 
@@ -714,9 +690,8 @@ def main(network, num_policy_iterations, no_of_actors, episode_duration, no_arri
     # states.sort()
     # print(states)
 
-    num = 200
+    num = 500
     adv_log = np.zeros((num + 1,1))
-
     while iteration < num_policy_iterations:
         # decrease clipping_range and learning rate each iteration
         iteration += 1
@@ -823,7 +798,12 @@ def main(network, num_policy_iterations, no_of_actors, episode_duration, no_arri
 
         ## algo 1: with new advantage function and algo 1 val function 
         # """
-        L = 2 #rollback amount
+        L = 100 #amount to sum
+        #get most common states (for debugging )
+        if iteration == 1:
+            state1_dict = most_common(trajectories, 5, True) # for algo 1 val fun estimates
+
+    
 
         # compute value NN for each visited state
         add_value(trajectories, val_func, scaler, network.next_state_list())
@@ -834,8 +814,8 @@ def main(network, num_policy_iterations, no_of_actors, episode_duration, no_arri
         #recompute value NN for each visited state 
         add_value(trajectories, val_func, scaler, network.next_state_list())
         # compute advantage function estimates  
-        act_adv1 = build_train_set(trajectories, gamma, scaler, adv_log, L)
-        advantages, actions, adv_log = advantage_fun(trajectories, gamma, lam, scaler, iteration, adv_log, val_func, logger, L, act_adv1) #new advantage function  
+        actions, advantages, adv_log = build_train_set(trajectories, gamma, scaler, adv_log, logger, L, iteration)
+        # advantages, actions, adv_log = advantage_fun(trajectories, gamma, lam, scaler, iteration, adv_log, val_func, logger, L) #new advantage function  
         log_batch_stats(observes, actions, advantages, logger, iteration)
         val_func.fit(observes, disc_sum_rew_norm, logger)# add various stats
 
@@ -928,7 +908,7 @@ if __name__ == "__main__":
     parser.add_argument('-b', '--no_of_actors', type=int, help='Number of episodes per training batch',
                         default=2)
     parser.add_argument('-t', '--episode_duration', type=int, help='Number of time-steps per an episode',
-                        default=50*10**3) # default=20*10**3, algo 2: 50*10**3
+                        default=20*10**3) # default=20*10**3, algo 2: 50*10**3
     parser.add_argument('-x', '--no_arrivals', type=int, help='Number of arrivals to evaluate policies',
                         default=5*10**6)
 
