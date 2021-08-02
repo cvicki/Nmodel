@@ -135,5 +135,12 @@ d21_algo1 logs the same values except uses algo 1's adv fun.
 Result: %opt did not improve. The advantage function would change between actions (decrease or increase) but would also change rapidly while the same action was taken. The sign and magnitude would also flucuate a lot. 
 
 
+###### d22 folder:
+Description: Algo 1 value function and algo 2 advantage function with L = 1, 2 rollout (sorted into L_1_runs and L_2_runs folders). Changed network parameters to 50,000 timesteps. Runs that did not crash are indicated with 'full_' prefix in name. For 'adv_estimate' algo 1's adv function estimate for both actions 0 and 1 at state [2,2]are printed on top. Below, every 3 (or 5 if have '_5' suffix) times [2,2] is visited, the action chosen and the adv estimate for action is logged. If there are None values, the trajectory did not visit at least 588 (980) times ((201-5)*3). Otherwise the estimates are truncated. 
 
 
+Issues: Program would crash at 48th iteration (of 50) due to 'Control-c event', potentially cause by ray package being unstable for Windows when running 50,000 timesteps per trajectory and L=1. Due to crash only the first 32 iterations would be logged onto log file and advantage estimates are not logged (since advantage estimates are saved only at very end). 
+Program also crashed at 48th iteration (of 60) due to 'control-c event' for 50,000 timesteps and L=2, however was sucessful in running another time. 
+Solution: Program has been successful at running at 47 iterations. 
+
+Results: 
