@@ -838,8 +838,8 @@ def main(network, num_policy_iterations, no_of_actors, episode_duration, no_arri
         #recompute value NN for each visited state 
         add_value(trajectories, val_func, scaler, network.next_state_list())
         # compute advantage function estimates  
-        observes,  actions, advantages, disc_sum_rew = build_train_set(trajectories, gamma, scaler)
-        # advantages, actions = advantage_fun(trajectories, gamma, lam, scaler, iteration, val_func, logger, L) #new advantage function  
+        # observes,  actions, advantages, disc_sum_rew = build_train_set(trajectories, gamma, scaler)
+        advantages, actions = advantage_fun(trajectories, gamma, lam, scaler, iteration, val_func, logger, L) #new advantage function  
         log_batch_stats(observes, actions, advantages, logger, iteration)
         # val_func.fit(observes, disc_sum_rew_norm, logger)# add various stats
 
@@ -931,7 +931,7 @@ if __name__ == "__main__":
     parser.add_argument('-n', '--num_policy_iterations', type=int, help='Number of policy iterations to run',
                         default=81) #default=50, use 5 for val fun comp.
     parser.add_argument('-b', '--no_of_actors', type=int, help='Number of episodes per training batch',
-                        default=2)
+                        default=3)
     parser.add_argument('-t', '--episode_duration', type=int, help='Number of time-steps per an episode',
                         default=50*10**3) # default=20*10**3, algo 2: 50*10**3
     parser.add_argument('-x', '--no_arrivals', type=int, help='Number of arrivals to evaluate policies',

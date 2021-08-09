@@ -838,8 +838,8 @@ def main(network, num_policy_iterations, no_of_actors, episode_duration, no_arri
         #recompute value NN for each visited state 
         add_value(trajectories, val_func, scaler, network.next_state_list())
         # compute advantage function estimates  
-        observes,  actions, advantages, disc_sum_rew = build_train_set(trajectories, gamma, scaler)
-        # advantages, actions = advantage_fun(trajectories, gamma, lam, scaler, iteration, val_func, logger, L) #new advantage function  
+        # observes,  actions, advantages, disc_sum_rew = build_train_set(trajectories, gamma, scaler)
+        advantages, actions = advantage_fun(trajectories, gamma, lam, scaler, iteration, val_func, logger, L) #new advantage function  
         log_batch_stats(observes, actions, advantages, logger, iteration)
         # val_func.fit(observes, disc_sum_rew_norm, logger)# add various stats
 

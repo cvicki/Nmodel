@@ -423,7 +423,7 @@ def add_value(trajectories, val_func, scaler, possible_states):
     time_policy = end_time - start_time
     print('add_value time:', int((time_policy.total_seconds() / 60) * 100) / 100., 'minutes')
 
-def build_train_set(trajectories, gamma, scaler):
+def build_train_set(trajectories, gamma, scaler, adv_log, L):
     """
     # data pre-processing for training, computation of advantage function estimates
     :param trajectory_whole:  simulated data
@@ -455,38 +455,37 @@ def build_train_set(trajectories, gamma, scaler):
         advantages = trajectory['rewards'] - values +gamma*P_a[:, np.newaxis]# gamma * np.append(values[1:], values[-1]), axis=0)  #
         trajectory['advantages_1'] = np.asarray(advantages)
 
-    ###############advantage logging################
-    # action_taken = []
-    # act_adv = []
-    # for i in range(len(advantages)):
-    #     if len(act_adv) == 2:
-    #         break
-    #     act = trajectory['actions'][i][0]
-    #     if act not in action_taken:
-    #         action_taken.append(act)
-    #         adv = trajectory['advantages_1'][i][0]
-    #         act_adv.append((act, adv))
+    action_taken = []
+    act_adv = []
+    for i in range(len(advantages)):
+        if len(act_adv) == 2:
+            break
+        act = trajectory['actions'][i][0]
+        if act not in action_taken:
+            action_taken.append(act)
+            adv = trajectory['advantages_1'][i][0]
+            act_adv.append((act, adv))
 
-    # act_adv = sorted(act_adv, key=lambda x:x[0])
+    act_adv = sorted(act_adv, key=lambda x:x[0])
     # print('act_adv: ', act_adv) 
 
     # adv_logger(advantages, trajectory, state_dict, logger) 
     # adv_log = adv_logger(advantages, trajectory, adv_log, iteration)
-    ##########################
 
     start_time = datetime.datetime.now()
-    burn = 1
+    burn = L
 
     # merge datapoints from all trajectories
     unscaled_obs = np.concatenate([t['unscaled_obs'][:-burn] for t in trajectories])
-    disc_sum_rew = np.concatenate([t['disc_sum_rew'][:-burn] for t in trajectories])
+    # disc_sum_rew = np.concatenate([t['disc_sum_rew'][:-burn] for t in trajectories])
 
+    """
     scale, offset = scaler.get()
     actions = np.concatenate([t['actions'][:-burn] for t in trajectories])
     advantages = np.concatenate([t['advantages_1'][:-burn] for t in trajectories])
     observes = (unscaled_obs - offset[:-1]) * scale[:-1]
     advantages = advantages  / (advantages.std() + 1e-6) # normalize advantages
-
+    """
 
 
     # uncomment if need to average over estimates for each state
@@ -515,8 +514,8 @@ def build_train_set(trajectories, gamma, scaler):
     end_time = datetime.datetime.now()
     time_policy = end_time - start_time
     print('build_train_set time:', int((time_policy.total_seconds() / 60) * 100) / 100., 'minutes')
-    return observes,  actions, advantages, disc_sum_rew
-    # return act_adv
+    # return observes,  actions, advantages, disc_sum_rew
+    return act_adv
     # return actions, advantages
 
 
@@ -611,8 +610,8 @@ def build_train_set2(trajectories, gamma, scaler, state_dict, logger, states = N
 
 
 
-# def log_batch_stats(observes, actions, advantages, logger, episode):
 def log_batch_stats(observes, actions, advantages, logger, episode):
+# def log_batch_stats(observes, actions, advantages, disc_sum_rew, logger, episode):
     # metadata tracking
 
     time_total = datetime.datetime.now() - logger.time_start
@@ -838,10 +837,10 @@ def main(network, num_policy_iterations, no_of_actors, episode_duration, no_arri
         #recompute value NN for each visited state 
         add_value(trajectories, val_func, scaler, network.next_state_list())
         # compute advantage function estimates  
-        observes,  actions, advantages, disc_sum_rew = build_train_set(trajectories, gamma, scaler)
-        # advantages, actions = advantage_fun(trajectories, gamma, lam, scaler, iteration, val_func, logger, L) #new advantage function  
+        # act_adv1 = build_train_set(trajectories, gamma, scaler, adv_log, L)
+        advantages, actions = advantage_fun(trajectories, gamma, lam, scaler, iteration, val_func, logger, L) #new advantage function  
         log_batch_stats(observes, actions, advantages, logger, iteration)
-        # val_func.fit(observes, disc_sum_rew_norm, logger)# add various stats
+        val_func.fit(observes, disc_sum_rew_norm, logger)# add various stats
 
         # update policy
         policy.update(observes, actions, np.squeeze(advantages), logger)
@@ -931,7 +930,7 @@ if __name__ == "__main__":
     parser.add_argument('-n', '--num_policy_iterations', type=int, help='Number of policy iterations to run',
                         default=81) #default=50, use 5 for val fun comp.
     parser.add_argument('-b', '--no_of_actors', type=int, help='Number of episodes per training batch',
-                        default=2)
+                        default=3)
     parser.add_argument('-t', '--episode_duration', type=int, help='Number of time-steps per an episode',
                         default=50*10**3) # default=20*10**3, algo 2: 50*10**3
     parser.add_argument('-x', '--no_arrivals', type=int, help='Number of arrivals to evaluate policies',

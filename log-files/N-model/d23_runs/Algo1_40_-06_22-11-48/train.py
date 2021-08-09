@@ -929,9 +929,9 @@ if __name__ == "__main__":
                                                   'using Proximal Policy Optimizer'))
 
     parser.add_argument('-n', '--num_policy_iterations', type=int, help='Number of policy iterations to run',
-                        default=81) #default=50, use 5 for val fun comp.
+                        default=40) #default=50, use 5 for val fun comp.
     parser.add_argument('-b', '--no_of_actors', type=int, help='Number of episodes per training batch',
-                        default=2)
+                        default=3)
     parser.add_argument('-t', '--episode_duration', type=int, help='Number of time-steps per an episode',
                         default=50*10**3) # default=20*10**3, algo 2: 50*10**3
     parser.add_argument('-x', '--no_arrivals', type=int, help='Number of arrivals to evaluate policies',
