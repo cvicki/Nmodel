@@ -20,7 +20,7 @@ class PolicyNN(tf.keras.Model):
         self.hid1 = tf.keras.layers.Dense(hid1_size, activation='relu')
         self.hid2 = tf.keras.layers.Dense(hid2_size, activation='relu')
         self.hid3 = tf.keras.layers.Dense(hid3_size, activation='relu')
-        self.a = tf.keras.layers.Dense(2, activation='softmax')
+        self.a = tf.keras.layers.Dense(2, activation='softmax', bias = False) #average cost = 0 problem 
 
         # known issue, requires passing a sample input data, see
         # https://stackoverflow.com/questions/60106829/cannot-build-custom-keras-model-with-custom-loss/60986815#60986815
